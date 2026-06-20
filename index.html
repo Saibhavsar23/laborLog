@@ -5,708 +5,216 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Field Labor Logs</title>
 <style>
-  /* ── Design tokens ── */
   :root {
-    --ink:        #0F172A;
-    --ink-muted:  #475569;
-    --ink-faint:  #94A3B8;
-    --surface:    #F8FAFC;
-    --panel:      #FFFFFF;
-    --border:     #E2E8F0;
-    --border-mid: #CBD5E1;
+    --ink:#0F172A;--ink-muted:#475569;--ink-faint:#94A3B8;--surface:#F8FAFC;--panel:#FFFFFF;
+    --border:#E2E8F0;--border-mid:#CBD5E1;--blue:#2563EB;--blue-light:#DBEAFE;--blue-dark:#1D4ED8;
+    --green:#16A34A;--green-light:#DCFCE7;--amber:#D97706;--amber-light:#FEF3C7;
+    --red:#DC2626;--red-light:#FEE2E2;--slate-800:#1E293B;--slate-900:#0F172A;
+    --font-sans:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+    --font-mono:'SF Mono','Fira Code','Cascadia Code',Consolas,monospace;
+    --radius:6px;--radius-lg:10px;
+    --shadow-sm:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+    --shadow-md:0 4px 12px rgba(0,0,0,.1),0 2px 6px rgba(0,0,0,.06);
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html{font-size:15px;}
+  body{font-family:var(--font-sans);background:var(--surface);color:var(--ink);line-height:1.5;min-height:100vh;}
 
-    --blue:       #2563EB;
-    --blue-light: #DBEAFE;
-    --blue-dark:  #1D4ED8;
+  /* Header */
+  #app-header{background:var(--slate-900);color:#fff;padding:0 20px;height:56px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.25);}
+  #app-header .logo-mark{width:32px;height:32px;background:var(--blue);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  #app-header .logo-mark svg{width:18px;height:18px;}
+  #app-header h1{font-size:1rem;font-weight:700;letter-spacing:.01em;color:#fff;}
+  #app-header .sync-dot{margin-left:auto;width:8px;height:8px;border-radius:50%;background:#94A3B8;transition:background .3s;flex-shrink:0;}
+  #app-header .sync-dot.connected{background:var(--green);}
+  #app-header .sync-dot.syncing{background:var(--amber);animation:pulse .8s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+  @keyframes spin{to{transform:rotate(360deg);}}
 
-    --green:      #16A34A;
-    --green-light:#DCFCE7;
-    --amber:      #D97706;
-    --amber-light:#FEF3C7;
-    --red:        #DC2626;
-    --red-light:  #FEE2E2;
+  /* Loading */
+  #app-loading{position:fixed;inset:0;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;z-index:9999;}
+  #app-loading .spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;}
+  #app-loading p{font-size:.9rem;color:var(--ink-muted);}
 
-    --slate-700:  #334155;
-    --slate-800:  #1E293B;
-    --slate-900:  #0F172A;
+  /* Layout */
+  #app-body{max-width:900px;margin:0 auto;padding:24px 16px 60px;}
+  .view{display:none;}.view.active{display:block;}
 
-    --font-sans:  -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-    --font-mono:  'SF Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+  /* Back link */
+  .back-link{display:inline-flex;align-items:center;gap:6px;font-size:.85rem;font-weight:500;color:var(--ink-muted);cursor:pointer;padding:6px 0;margin-bottom:20px;border:none;background:none;text-decoration:none;}
+  .back-link:hover{color:var(--blue);}
+  .back-link svg{width:16px;height:16px;}
 
-    --radius:     6px;
-    --radius-lg:  10px;
-    --shadow-sm:  0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
-    --shadow-md:  0 4px 12px rgba(0,0,0,.1), 0 2px 6px rgba(0,0,0,.06);
-  }
+  /* View header */
+  .view-header{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:24px;}
+  .view-header-left h2{font-size:1.35rem;font-weight:700;color:var(--ink);line-height:1.2;}
+  .view-header-left .sub{font-size:.85rem;color:var(--ink-muted);margin-top:2px;}
+  .view-header-actions{display:flex;gap:8px;flex-wrap:wrap;}
 
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  /* Buttons */
+  .btn{display:inline-flex;align-items:center;gap:6px;padding:0 16px;height:40px;border-radius:var(--radius);font-size:.875rem;font-weight:600;cursor:pointer;border:1.5px solid transparent;transition:background .15s,border-color .15s,box-shadow .15s;white-space:nowrap;min-width:44px;}
+  .btn svg{width:16px;height:16px;flex-shrink:0;}
+  .btn:disabled{opacity:.45;cursor:not-allowed;}
+  .btn-primary{background:var(--blue);color:#fff;border-color:var(--blue);}
+  .btn-primary:hover:not(:disabled){background:var(--blue-dark);border-color:var(--blue-dark);box-shadow:0 2px 8px rgba(37,99,235,.3);}
+  .btn-secondary{background:var(--panel);color:var(--ink-muted);border-color:var(--border-mid);}
+  .btn-secondary:hover:not(:disabled){background:var(--surface);color:var(--ink);border-color:var(--ink-faint);}
+  .btn-danger{background:transparent;color:var(--red);border-color:var(--red);}
+  .btn-danger:hover:not(:disabled){background:var(--red-light);}
+  .btn-sm{height:32px;padding:0 10px;font-size:.8rem;border-radius:4px;}
 
-  html { font-size: 15px; }
+  /* Badges */
+  .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:99px;font-size:.75rem;font-weight:600;letter-spacing:.02em;}
+  .badge-blue{background:var(--blue-light);color:#1D4ED8;}
+  .badge-gray{background:#F1F5F9;color:#475569;}
+  .badge-green{background:var(--green-light);color:#15803D;}
+  .badge-amber{background:var(--amber-light);color:#B45309;}
+  .badge-red{background:var(--red-light);color:#B91C1C;}
 
-  body {
-    font-family: var(--font-sans);
-    background: var(--surface);
-    color: var(--ink);
-    line-height: 1.5;
-    min-height: 100vh;
-  }
+  /* Cards */
+  .card{background:var(--panel);border:1.5px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);transition:box-shadow .15s,border-color .15s,transform .12s;}
+  .card-clickable{cursor:pointer;}
+  .card-clickable:hover{border-color:var(--blue);box-shadow:var(--shadow-md);transform:translateY(-1px);}
 
-  /* ── Header ── */
-  #app-header {
-    background: var(--slate-900);
-    color: #fff;
-    padding: 0 20px;
-    height: 56px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    box-shadow: 0 2px 8px rgba(0,0,0,.25);
-  }
-  #app-header .logo-mark {
-    width: 32px;
-    height: 32px;
-    background: var(--blue);
-    border-radius: var(--radius);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-  #app-header .logo-mark svg { width: 18px; height: 18px; }
-  #app-header h1 {
-    font-size: 1rem;
-    font-weight: 700;
-    letter-spacing: .01em;
-    color: #fff;
-  }
-  #app-header .header-sub {
-    font-size: .75rem;
-    color: #94A3B8;
-    font-weight: 400;
-  }
+  /* Project grid */
+  #projects-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
+  .project-card .card-inner{padding:18px 20px;}
+  .project-card .card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;}
+  .project-card .card-name{font-size:1rem;font-weight:700;color:var(--ink);line-height:1.3;}
+  .project-card .card-client{font-size:.8rem;color:var(--ink-muted);margin-top:2px;}
+  .project-card .card-address{font-size:.78rem;color:var(--ink-faint);margin-top:2px;display:flex;align-items:center;gap:3px;}
+  .project-card .card-stats{display:flex;gap:20px;margin-top:14px;padding-top:14px;border-top:1px solid var(--border);}
+  .project-card .stat{text-align:center;}
+  .project-card .stat-val{font-size:1.15rem;font-weight:700;font-family:var(--font-mono);color:var(--ink);}
+  .project-card .stat-lbl{font-size:.7rem;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.05em;margin-top:1px;}
 
-  /* ── Main container ── */
-  #app-body {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 24px 16px 60px;
-  }
+  /* Empty state */
+  .empty-state{text-align:center;padding:60px 20px;color:var(--ink-muted);}
+  .empty-state .empty-icon{width:56px;height:56px;background:var(--surface);border:2px solid var(--border);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;color:var(--ink-faint);}
+  .empty-state h3{font-size:1rem;font-weight:600;color:var(--ink);margin-bottom:6px;}
+  .empty-state p{font-size:.875rem;max-width:300px;margin:0 auto 20px;}
 
-  /* ── Views ── */
-  .view { display: none; }
-  .view.active { display: block; }
+  /* Form card */
+  .form-card{background:var(--panel);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:24px;margin-bottom:24px;box-shadow:var(--shadow-sm);}
+  .form-card h3{font-size:1rem;font-weight:700;margin-bottom:18px;color:var(--ink);padding-bottom:12px;border-bottom:1px solid var(--border);}
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:560px){.form-row{grid-template-columns:1fr;}}
+  .field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px;}
+  .field:last-child{margin-bottom:0;}
+  .field label{font-size:.8rem;font-weight:600;color:var(--ink-muted);text-transform:uppercase;letter-spacing:.04em;}
+  .field input,.field select,.field textarea{height:42px;padding:0 12px;border:1.5px solid var(--border);border-radius:var(--radius);font-size:.9rem;font-family:var(--font-sans);color:var(--ink);background:var(--surface);transition:border-color .15s,box-shadow .15s;}
+  .field textarea{height:auto;min-height:80px;padding:10px 12px;resize:vertical;line-height:1.5;}
+  .field input:focus,.field select:focus,.field textarea:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(37,99,235,.15);background:var(--panel);}
+  .field input[type="checkbox"]{width:18px;height:18px;accent-color:var(--blue);cursor:pointer;align-self:flex-start;margin-top:2px;}
+  .checkbox-row{flex-direction:row;align-items:center;gap:10px;height:42px;}
+  .checkbox-row label{text-transform:none;letter-spacing:0;font-size:.9rem;font-weight:500;}
+  .form-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:20px;padding-top:16px;border-top:1px solid var(--border);}
 
-  /* ── Breadcrumb / Back ── */
-  .back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    font-size: .85rem;
-    font-weight: 500;
-    color: var(--ink-muted);
-    cursor: pointer;
-    padding: 6px 0;
-    margin-bottom: 20px;
-    border: none;
-    background: none;
-    text-decoration: none;
-  }
-  .back-link:hover { color: var(--blue); }
-  .back-link svg { width: 16px; height: 16px; }
+  /* Chips */
+  .chips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:24px;}
+  .chip{background:var(--panel);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:10px 18px;display:flex;flex-direction:column;align-items:center;min-width:90px;box-shadow:var(--shadow-sm);}
+  .chip-val{font-size:1.5rem;font-weight:800;font-family:var(--font-mono);color:var(--ink);line-height:1;}
+  .chip-lbl{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-faint);margin-top:4px;font-weight:600;}
+  .chip-blue .chip-val{color:var(--blue);}
 
-  /* ── Section headers ── */
-  .view-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 12px;
-    margin-bottom: 24px;
-  }
-  .view-header-left h2 {
-    font-size: 1.35rem;
-    font-weight: 700;
-    color: var(--ink);
-    line-height: 1.2;
-  }
-  .view-header-left .sub {
-    font-size: .85rem;
-    color: var(--ink-muted);
-    margin-top: 2px;
-  }
-  .view-header-actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
+  /* Tables */
+  .table-wrap{overflow-x:auto;border-radius:var(--radius-lg);border:1.5px solid var(--border);background:var(--panel);box-shadow:var(--shadow-sm);}
+  table{width:100%;border-collapse:collapse;font-size:.875rem;}
+  thead tr{background:var(--slate-800);color:#fff;}
+  thead th{padding:11px 14px;text-align:left;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;}
+  tbody tr{border-top:1px solid var(--border);transition:background .1s;}
+  tbody tr:hover:not(.tr-review){background:#F8FAFC;}
+  tbody td{padding:11px 14px;color:var(--ink);vertical-align:middle;}
+  .tr-review{background:var(--amber-light)!important;}
+  .tr-review:hover{background:#FDE68A!important;}
 
-  /* ── Buttons ── */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 0 16px;
-    height: 40px;
-    border-radius: var(--radius);
-    font-size: .875rem;
-    font-weight: 600;
-    cursor: pointer;
-    border: 1.5px solid transparent;
-    transition: background .15s, border-color .15s, box-shadow .15s;
-    white-space: nowrap;
-    min-width: 44px;
-  }
-  .btn svg { width: 16px; height: 16px; flex-shrink: 0; }
-  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  /* Dots */
+  .dot{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0;}
+  .dot-green{background:var(--green);}
+  .dot-amber{background:var(--amber);}
 
-  .btn-primary {
-    background: var(--blue);
-    color: #fff;
-    border-color: var(--blue);
-  }
-  .btn-primary:hover:not(:disabled) {
-    background: var(--blue-dark);
-    border-color: var(--blue-dark);
-    box-shadow: 0 2px 8px rgba(37,99,235,.3);
-  }
+  /* Cell inputs */
+  .cell-input{width:100%;border:1.5px solid transparent;border-radius:4px;padding:4px 6px;font-family:var(--font-mono);font-size:.85rem;background:transparent;color:var(--ink);min-width:70px;transition:border-color .15s,background .15s;}
+  .cell-input:focus{outline:none;border-color:var(--blue);background:var(--panel);}
+  .cell-input-name{font-family:var(--font-sans);min-width:120px;}
 
-  .btn-secondary {
-    background: var(--panel);
-    color: var(--ink-muted);
-    border-color: var(--border-mid);
-  }
-  .btn-secondary:hover:not(:disabled) {
-    background: var(--surface);
-    color: var(--ink);
-    border-color: var(--ink-faint);
-  }
+  /* Upload zone */
+  .upload-zone{border:2.5px dashed var(--border-mid);border-radius:var(--radius-lg);background:var(--surface);padding:40px 20px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;margin-bottom:20px;}
+  .upload-zone:hover{border-color:var(--blue);background:var(--blue-light);}
+  .upload-zone.has-image{padding:12px;}
+  .upload-zone .upload-icon{color:var(--ink-faint);margin-bottom:10px;}
+  .upload-zone h4{font-size:.95rem;font-weight:600;margin-bottom:4px;}
+  .upload-zone p{font-size:.8rem;color:var(--ink-muted);}
+  #preview-img{max-width:100%;max-height:280px;border-radius:var(--radius);display:none;margin:0 auto;object-fit:contain;}
+  #file-input{display:none;}
 
-  .btn-danger {
-    background: transparent;
-    color: var(--red);
-    border-color: var(--red);
-  }
-  .btn-danger:hover:not(:disabled) {
-    background: var(--red-light);
-  }
+  /* API key */
+  .api-key-row{display:flex;gap:8px;align-items:flex-end;margin-bottom:16px;}
+  .api-key-row .field{flex:1;margin-bottom:0;}
+  .key-toggle{position:relative;}
+  .key-toggle-btn{position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--ink-faint);padding:4px;}
+  .key-toggle-btn:hover{color:var(--ink-muted);}
+  .key-toggle input{padding-right:36px!important;}
 
-  .btn-ghost {
-    background: transparent;
-    color: var(--ink-muted);
-    border-color: transparent;
-    padding: 0 8px;
-  }
-  .btn-ghost:hover:not(:disabled) { background: var(--surface); color: var(--ink); }
+  /* Spinner */
+  .spinner-wrap{display:flex;flex-direction:column;align-items:center;gap:12px;padding:32px;color:var(--ink-muted);font-size:.9rem;}
+  .spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--blue);border-radius:50%;animation:spin .7s linear infinite;}
 
-  .btn-sm {
-    height: 32px;
-    padding: 0 10px;
-    font-size: .8rem;
-    border-radius: 4px;
-  }
+  /* Alert */
+  .alert{border-radius:var(--radius);padding:12px 16px;font-size:.875rem;margin-bottom:16px;border-left:4px solid;}
+  .alert-error{background:var(--red-light);border-color:var(--red);color:#7F1D1D;}
+  .alert-success{background:var(--green-light);border-color:var(--green);color:#14532D;}
 
-  .btn-icon {
-    width: 36px;
-    height: 36px;
-    padding: 0;
-    justify-content: center;
-    border-radius: var(--radius);
-  }
+  /* Table actions */
+  .table-actions-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--surface);border-top:1px solid var(--border);flex-wrap:wrap;gap:8px;}
+  .worker-summary{font-size:.8rem;color:var(--ink-muted);font-family:var(--font-mono);}
+  .worker-summary strong{color:var(--ink);}
 
-  /* ── Badges ── */
-  .badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 2px 9px;
-    border-radius: 99px;
-    font-size: .75rem;
-    font-weight: 600;
-    letter-spacing: .02em;
-  }
-  .badge-blue   { background: var(--blue-light);  color: #1D4ED8; }
-  .badge-gray   { background: #F1F5F9; color: #475569; }
-  .badge-green  { background: var(--green-light); color: #15803D; }
-  .badge-amber  { background: var(--amber-light); color: #B45309; }
-  .badge-red    { background: var(--red-light);   color: #B91C1C; }
+  /* AI notes */
+  .ai-notes-block{background:#F8FAFF;border:1.5px solid #DBEAFE;border-radius:var(--radius);padding:12px 14px;font-size:.83rem;color:var(--ink-muted);font-style:italic;line-height:1.6;margin-bottom:16px;}
+  .ai-notes-block strong{font-style:normal;font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--blue);font-weight:700;display:block;margin-bottom:4px;}
 
-  /* ── Cards ── */
-  .card {
-    background: var(--panel);
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-sm);
-    transition: box-shadow .15s, border-color .15s, transform .12s;
-  }
-  .card-clickable { cursor: pointer; }
-  .card-clickable:hover {
-    border-color: var(--blue);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
-  }
+  /* Log meta */
+  .log-meta{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px;}
+  .log-meta-item .lm-label{font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-faint);font-weight:700;margin-bottom:3px;}
+  .log-meta-item .lm-val{font-size:.95rem;color:var(--ink);font-weight:500;}
 
-  /* ── Project grid ── */
-  #projects-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 16px;
-  }
-  .project-card .card-inner { padding: 18px 20px; }
-  .project-card .card-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 8px;
-  }
-  .project-card .card-name {
-    font-size: 1rem;
-    font-weight: 700;
-    color: var(--ink);
-    line-height: 1.3;
-  }
-  .project-card .card-client {
-    font-size: .8rem;
-    color: var(--ink-muted);
-    margin-top: 2px;
-  }
-  .project-card .card-address {
-    font-size: .78rem;
-    color: var(--ink-faint);
-    margin-top: 2px;
-    display: flex;
-    align-items: center;
-    gap: 3px;
-  }
-  .project-card .card-stats {
-    display: flex;
-    gap: 20px;
-    margin-top: 14px;
-    padding-top: 14px;
-    border-top: 1px solid var(--border);
-  }
-  .project-card .stat { text-align: center; }
-  .project-card .stat-val {
-    font-size: 1.15rem;
-    font-weight: 700;
-    font-family: var(--font-mono);
-    color: var(--ink);
-  }
-  .project-card .stat-lbl {
-    font-size: .7rem;
-    color: var(--ink-faint);
-    text-transform: uppercase;
-    letter-spacing: .05em;
-    margin-top: 1px;
-  }
+  /* Caution bar */
+  .caution-bar{height:4px;background:repeating-linear-gradient(-45deg,var(--amber) 0px,var(--amber) 8px,#1E293B 8px,#1E293B 16px);border-radius:2px;margin-bottom:20px;opacity:.55;}
 
-  /* ── Empty state ── */
-  .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--ink-muted);
-  }
-  .empty-state .empty-icon {
-    width: 56px;
-    height: 56px;
-    background: var(--surface);
-    border: 2px solid var(--border);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 16px;
-    color: var(--ink-faint);
-  }
-  .empty-state h3 { font-size: 1rem; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
-  .empty-state p { font-size: .875rem; max-width: 300px; margin: 0 auto 20px; }
+  /* Section label */
+  .section-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint);margin-bottom:10px;margin-top:20px;}
 
-  /* ── Form card ── */
-  .form-card {
-    background: var(--panel);
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 24px;
-    margin-bottom: 24px;
-    box-shadow: var(--shadow-sm);
-  }
-  .form-card h3 {
-    font-size: 1rem;
-    font-weight: 700;
-    margin-bottom: 18px;
-    color: var(--ink);
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--border);
-  }
+  /* Project meta */
+  .project-meta{background:var(--panel);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:18px 20px;margin-bottom:20px;display:flex;flex-wrap:wrap;gap:20px;box-shadow:var(--shadow-sm);}
+  .project-meta .pm-item{flex:1;min-width:150px;}
+  .project-meta .pm-label{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-faint);margin-bottom:3px;}
+  .project-meta .pm-val{font-size:.95rem;color:var(--ink);font-weight:500;}
 
-  .form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 14px;
-  }
-  @media (max-width: 560px) { .form-row { grid-template-columns: 1fr; } }
+  /* Delete row button */
+  .delete-row-btn{width:30px;height:30px;display:flex;align-items:center;justify-content:center;border:none;background:none;color:var(--ink-faint);cursor:pointer;border-radius:4px;transition:background .12s,color .12s;}
+  .delete-row-btn:hover{background:var(--red-light);color:var(--red);}
 
-  .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
-  .field:last-child { margin-bottom: 0; }
-  .field label {
-    font-size: .8rem;
-    font-weight: 600;
-    color: var(--ink-muted);
-    text-transform: uppercase;
-    letter-spacing: .04em;
+  /* Responsive */
+  @media(max-width:640px){
+    #app-body{padding:16px 12px 48px;}
+    .form-card{padding:16px;}
+    .chips{gap:8px;}
+    .chip{min-width:72px;padding:8px 12px;}
+    .chip-val{font-size:1.2rem;}
+    .view-header{flex-direction:column;}
+    .view-header-actions{width:100%;}
+    .view-header-actions .btn{flex:1;justify-content:center;}
+    thead th,tbody td{padding:9px 10px;}
   }
-  .field input, .field select, .field textarea {
-    height: 42px;
-    padding: 0 12px;
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius);
-    font-size: .9rem;
-    font-family: var(--font-sans);
-    color: var(--ink);
-    background: var(--surface);
-    transition: border-color .15s, box-shadow .15s;
-  }
-  .field textarea {
-    height: auto;
-    min-height: 80px;
-    padding: 10px 12px;
-    resize: vertical;
-    line-height: 1.5;
-  }
-  .field input:focus, .field select:focus, .field textarea:focus {
-    outline: none;
-    border-color: var(--blue);
-    box-shadow: 0 0 0 3px rgba(37,99,235,.15);
-    background: var(--panel);
-  }
-  .field input[type="checkbox"] {
-    width: 18px; height: 18px;
-    accent-color: var(--blue);
-    cursor: pointer;
-    align-self: flex-start;
-    margin-top: 2px;
-  }
-  .checkbox-row { flex-direction: row; align-items: center; gap: 10px; height: 42px; }
-  .checkbox-row label { text-transform: none; letter-spacing: 0; font-size: .9rem; font-weight: 500; }
-
-  .form-actions {
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-    margin-top: 20px;
-    padding-top: 16px;
-    border-top: 1px solid var(--border);
-  }
-
-  /* ── Chips / summary chips ── */
-  .chips {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-bottom: 24px;
-  }
-  .chip {
-    background: var(--panel);
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 10px 18px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-width: 90px;
-    box-shadow: var(--shadow-sm);
-  }
-  .chip-val {
-    font-size: 1.5rem;
-    font-weight: 800;
-    font-family: var(--font-mono);
-    color: var(--ink);
-    line-height: 1;
-  }
-  .chip-lbl {
-    font-size: .7rem;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    color: var(--ink-faint);
-    margin-top: 4px;
-    font-weight: 600;
-  }
-  .chip-amber .chip-val { color: var(--amber); }
-  .chip-blue .chip-val  { color: var(--blue); }
-
-  /* ── Tables ── */
-  .table-wrap { overflow-x: auto; border-radius: var(--radius-lg); border: 1.5px solid var(--border); background: var(--panel); box-shadow: var(--shadow-sm); }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: .875rem;
-  }
-  thead tr {
-    background: var(--slate-800);
-    color: #fff;
-  }
-  thead th {
-    padding: 11px 14px;
-    text-align: left;
-    font-size: .72rem;
-    font-weight: 700;
-    letter-spacing: .06em;
-    text-transform: uppercase;
-    white-space: nowrap;
-  }
-  tbody tr {
-    border-top: 1px solid var(--border);
-    transition: background .1s;
-  }
-  tbody tr:hover:not(.tr-review) { background: #F8FAFC; }
-  tbody td {
-    padding: 11px 14px;
-    color: var(--ink);
-    vertical-align: middle;
-  }
-  .tr-review { background: var(--amber-light) !important; }
-  .tr-review:hover { background: #FDE68A !important; }
-
-  /* Status dot */
-  .dot {
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    display: inline-block;
-    flex-shrink: 0;
-  }
-  .dot-green  { background: var(--green); }
-  .dot-amber  { background: var(--amber); }
-  .dot-red    { background: var(--red); }
-
-  /* Inline editable cells */
-  .cell-input {
-    width: 100%;
-    border: 1.5px solid transparent;
-    border-radius: 4px;
-    padding: 4px 6px;
-    font-family: var(--font-mono);
-    font-size: .85rem;
-    background: transparent;
-    color: var(--ink);
-    min-width: 70px;
-    transition: border-color .15s, background .15s;
-  }
-  .cell-input:focus {
-    outline: none;
-    border-color: var(--blue);
-    background: var(--panel);
-  }
-  .cell-input-name { font-family: var(--font-sans); min-width: 120px; }
-
-  /* ── Upload zone ── */
-  .upload-zone {
-    border: 2.5px dashed var(--border-mid);
-    border-radius: var(--radius-lg);
-    background: var(--surface);
-    padding: 40px 20px;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color .2s, background .2s;
-    margin-bottom: 20px;
-  }
-  .upload-zone:hover { border-color: var(--blue); background: var(--blue-light); }
-  .upload-zone.has-image { padding: 12px; }
-  .upload-zone .upload-icon { color: var(--ink-faint); margin-bottom: 10px; }
-  .upload-zone h4 { font-size: .95rem; font-weight: 600; margin-bottom: 4px; }
-  .upload-zone p { font-size: .8rem; color: var(--ink-muted); }
-  #preview-img {
-    max-width: 100%;
-    max-height: 280px;
-    border-radius: var(--radius);
-    display: none;
-    margin: 0 auto;
-    object-fit: contain;
-  }
-  #file-input { display: none; }
-
-  /* ── API key row ── */
-  .api-key-row {
-    display: flex;
-    gap: 8px;
-    align-items: flex-end;
-    margin-bottom: 16px;
-  }
-  .api-key-row .field { flex: 1; margin-bottom: 0; }
-  .api-key-row input[type="password"],
-  .api-key-row input[type="text"] {
-    font-family: var(--font-mono);
-    font-size: .8rem;
-    letter-spacing: .04em;
-  }
-
-  /* ── Spinner ── */
-  .spinner-wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    padding: 32px;
-    color: var(--ink-muted);
-    font-size: .9rem;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .spinner {
-    width: 32px; height: 32px;
-    border: 3px solid var(--border);
-    border-top-color: var(--blue);
-    border-radius: 50%;
-    animation: spin .7s linear infinite;
-  }
-
-  /* ── Alert ── */
-  .alert {
-    border-radius: var(--radius);
-    padding: 12px 16px;
-    font-size: .875rem;
-    margin-bottom: 16px;
-    border-left: 4px solid;
-  }
-  .alert-error { background: var(--red-light); border-color: var(--red); color: #7F1D1D; }
-  .alert-success { background: var(--green-light); border-color: var(--green); color: #14532D; }
-
-  /* ── Worker table actions row ── */
-  .table-actions-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 14px;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .worker-summary {
-    font-size: .8rem;
-    color: var(--ink-muted);
-    font-family: var(--font-mono);
-  }
-  .worker-summary strong { color: var(--ink); }
-
-  /* ── AI notes ── */
-  .ai-notes-block {
-    background: #F8FAFF;
-    border: 1.5px solid #DBEAFE;
-    border-radius: var(--radius);
-    padding: 12px 14px;
-    font-size: .83rem;
-    color: var(--ink-muted);
-    font-style: italic;
-    line-height: 1.6;
-    margin-bottom: 16px;
-  }
-  .ai-notes-block strong { font-style: normal; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--blue); font-weight: 700; display: block; margin-bottom: 4px; }
-
-  /* ── Log meta grid ── */
-  .log-meta {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 12px;
-    margin-bottom: 20px;
-  }
-  .log-meta-item { }
-  .log-meta-item .lm-label {
-    font-size: .7rem;
-    text-transform: uppercase;
-    letter-spacing: .06em;
-    color: var(--ink-faint);
-    font-weight: 700;
-    margin-bottom: 3px;
-  }
-  .log-meta-item .lm-val { font-size: .95rem; color: var(--ink); font-weight: 500; }
-
-  /* ── Caution tape accent (signature element) ── */
-  .caution-bar {
-    height: 4px;
-    background: repeating-linear-gradient(
-      -45deg,
-      var(--amber) 0px,
-      var(--amber) 8px,
-      #1E293B 8px,
-      #1E293B 16px
-    );
-    border-radius: 2px;
-    margin-bottom: 20px;
-    opacity: .55;
-  }
-
-  /* ── Section divider ── */
-  .section-label {
-    font-size: .7rem;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: .08em;
-    color: var(--ink-faint);
-    margin-bottom: 10px;
-    margin-top: 20px;
-  }
-
-  /* ── Project detail metadata ── */
-  .project-meta {
-    background: var(--panel);
-    border: 1.5px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 18px 20px;
-    margin-bottom: 20px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 20px;
-    box-shadow: var(--shadow-sm);
-  }
-  .project-meta .pm-item { flex: 1; min-width: 150px; }
-  .project-meta .pm-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-faint); margin-bottom: 3px; }
-  .project-meta .pm-val { font-size: .95rem; color: var(--ink); font-weight: 500; }
-
-  /* ── Responsive ── */
-  @media (max-width: 640px) {
-    #app-body { padding: 16px 12px 48px; }
-    .form-card { padding: 16px; }
-    .chips { gap: 8px; }
-    .chip { min-width: 72px; padding: 8px 12px; }
-    .chip-val { font-size: 1.2rem; }
-    .view-header { flex-direction: column; }
-    .view-header-actions { width: 100%; }
-    .view-header-actions .btn { flex: 1; justify-content: center; }
-    thead th, tbody td { padding: 9px 10px; }
-  }
-
-  /* ── Toggle show key ── */
-  .key-toggle { position: relative; }
-  .key-toggle-btn {
-    position: absolute;
-    right: 8px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--ink-faint);
-    padding: 4px;
-  }
-  .key-toggle-btn:hover { color: var(--ink-muted); }
-  .key-toggle input { padding-right: 36px !important; }
-
-  /* ── Delete icon button ── */
-  .delete-row-btn {
-    width: 30px; height: 30px;
-    display: flex; align-items: center; justify-content: center;
-    border: none; background: none;
-    color: var(--ink-faint);
-    cursor: pointer;
-    border-radius: 4px;
-    transition: background .12s, color .12s;
-  }
-  .delete-row-btn:hover { background: var(--red-light); color: var(--red); }
 </style>
 </head>
 <body>
+
+<div id="app-loading">
+  <div class="spinner"></div>
+  <p>Connecting to database&#8230;</p>
+</div>
 
 <header id="app-header">
   <div class="logo-mark">
@@ -717,16 +225,13 @@
       <line x1="9" y1="16" x2="13" y2="16"/>
     </svg>
   </div>
-  <div>
-    <h1>Field Labor Logs</h1>
-  </div>
+  <h1>Field Labor Logs</h1>
+  <div class="sync-dot" id="sync-dot" title="Database connection"></div>
 </header>
 
-<main id="app-body">
+<main id="app-body" style="display:none;">
 
-  <!-- ══════════════════════════════════════════
-       VIEW 1: Projects
-  ══════════════════════════════════════════ -->
+  <!-- VIEW: Projects -->
   <div id="view-projects" class="view active">
     <div class="view-header">
       <div class="view-header-left">
@@ -740,27 +245,15 @@
         </button>
       </div>
     </div>
-
-    <!-- New project form (inline) -->
     <div id="new-project-form" class="form-card" style="display:none;">
       <h3>New Project</h3>
       <div class="form-row">
-        <div class="field">
-          <label>Project Name <span style="color:var(--red)">*</span></label>
-          <input type="text" id="np-name" placeholder="e.g. Riverside Office Build">
-        </div>
-        <div class="field">
-          <label>Client Name</label>
-          <input type="text" id="np-client" placeholder="e.g. Acme Construction">
-        </div>
+        <div class="field"><label>Project Name <span style="color:var(--red)">*</span></label><input type="text" id="np-name" placeholder="e.g. Riverside Office Build"></div>
+        <div class="field"><label>Client Name</label><input type="text" id="np-client" placeholder="e.g. Acme Construction"></div>
       </div>
       <div class="form-row">
-        <div class="field">
-          <label>Site Address</label>
-          <input type="text" id="np-address" placeholder="e.g. 1200 Commerce Dr, Austin TX">
-        </div>
-        <div class="field">
-          <label>Status</label>
+        <div class="field"><label>Site Address</label><input type="text" id="np-address" placeholder="e.g. 1200 Commerce Dr, Austin TX"></div>
+        <div class="field"><label>Status</label>
           <select id="np-status">
             <option value="Active">Active</option>
             <option value="On Hold">On Hold</option>
@@ -773,25 +266,25 @@
         <button class="btn btn-primary" onclick="createProject()">Create Project</button>
       </div>
     </div>
-
     <div id="projects-grid"></div>
   </div>
 
-  <!-- ══════════════════════════════════════════
-       VIEW 2: Project Detail
-  ══════════════════════════════════════════ -->
+  <!-- VIEW: Project Detail -->
   <div id="view-project-detail" class="view">
     <button class="back-link" onclick="showView('projects')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 5l-7 7 7 7"/></svg>
       All Projects
     </button>
-
     <div class="view-header">
       <div class="view-header-left">
         <h2 id="pd-name">Project Name</h2>
         <div class="sub" id="pd-sub"></div>
       </div>
       <div class="view-header-actions">
+        <button class="btn btn-danger" onclick="deleteProject()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          Delete
+        </button>
         <button class="btn btn-secondary" onclick="exportCSV()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
           Export CSV
@@ -802,164 +295,106 @@
         </button>
       </div>
     </div>
-
     <div id="pd-project-meta" class="project-meta"></div>
-
     <div class="chips" id="pd-chips"></div>
-
     <div class="section-label">Labor Logs</div>
     <div id="pd-logs-wrap" class="table-wrap">
-      <table id="pd-logs-table">
-        <thead>
-          <tr>
-            <th>Date</th>
-            <th>Foreman</th>
-            <th>Site</th>
-            <th>Workers</th>
-            <th>Total Hrs</th>
-            <th>Legibility</th>
-            <th>Signed</th>
-            <th></th>
-          </tr>
-        </thead>
+      <table>
+        <thead><tr><th>Date</th><th>Foreman</th><th>Site</th><th>Workers</th><th>Total Hrs</th><th>Legibility</th><th>Signed</th><th></th></tr></thead>
         <tbody id="pd-logs-body"></tbody>
       </table>
     </div>
     <div id="pd-empty" class="empty-state" style="display:none;">
-      <div class="empty-icon">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-      </div>
+      <div class="empty-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
       <h3>No logs yet</h3>
       <p>Upload a photo of a paper labor log to get started.</p>
       <button class="btn btn-primary" onclick="goToUpload()">Upload first log</button>
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════
-       VIEW 3: Upload & Extract
-  ══════════════════════════════════════════ -->
+  <!-- VIEW: Upload & Extract -->
   <div id="view-upload" class="view">
     <button class="back-link" onclick="cancelUpload()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 5l-7 7 7 7"/></svg>
       Back to Project
     </button>
-
     <div class="view-header">
       <div class="view-header-left">
         <h2>Upload Labor Log</h2>
         <div class="sub" id="upload-project-name"></div>
       </div>
     </div>
-
-    <!-- Photo upload -->
     <div class="form-card">
-      <h3>Step 1 — Photo</h3>
+      <h3>Step 1 &#8212; Photo</h3>
       <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
-        <div class="upload-icon">
-          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-        </div>
+        <div class="upload-icon"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
         <h4>Tap to photograph or upload a log</h4>
         <p>Opens rear camera on mobile. JPEG, PNG, HEIC supported.</p>
       </div>
       <input type="file" id="file-input" accept="image/*" capture="environment" onchange="handleFileSelect(event)">
       <img id="preview-img" alt="Log preview">
     </div>
-
-    <!-- API Key -->
     <div class="form-card">
-      <h3>Step 2 — Anthropic API Key</h3>
+      <h3>Step 2 &#8212; Anthropic API Key</h3>
       <div class="api-key-row">
         <div class="field key-toggle" style="margin-bottom:0">
           <label>API Key</label>
           <input type="password" id="api-key-input" placeholder="sk-ant-..." oninput="checkExtractReady()">
           <button class="key-toggle-btn" onclick="toggleKeyVisibility()" title="Show/hide key">
-            <svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
           </button>
         </div>
         <button class="btn btn-secondary btn-sm" style="height:42px;margin-bottom:0" onclick="saveApiKey()">Save Key</button>
       </div>
-      <p style="font-size:.78rem;color:var(--ink-faint);margin-top:6px;">Your key is stored only in your browser. Never shared.</p>
+      <p style="font-size:.78rem;color:var(--ink-faint);margin-top:6px;">Stored only in your browser. Never shared.</p>
     </div>
-
-    <!-- Extract button -->
     <div style="margin-bottom:20px;">
       <button class="btn btn-primary" id="extract-btn" onclick="extractData()" disabled style="width:100%;justify-content:center;height:48px;font-size:1rem;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
         Extract Labor Data
       </button>
     </div>
-
-    <!-- Loading / Error -->
     <div id="extract-spinner" style="display:none;" class="form-card">
-      <div class="spinner-wrap">
-        <div class="spinner"></div>
-        <span>Analyzing photo…</span>
-      </div>
+      <div class="spinner-wrap"><div class="spinner"></div><span>Analyzing photo&#8230;</span></div>
     </div>
     <div id="extract-error" class="alert alert-error" style="display:none;"></div>
-
-    <!-- Review & Edit form (shown after extraction) -->
     <div id="review-section" style="display:none;">
       <div class="caution-bar"></div>
       <div class="form-card">
         <h3>Review &amp; Edit Extracted Data</h3>
         <div class="form-row">
-          <div class="field">
-            <label>Log Date</label>
-            <input type="date" id="rev-date">
-          </div>
-          <div class="field">
-            <label>Foreman Name</label>
-            <input type="text" id="rev-foreman" placeholder="Name">
-          </div>
+          <div class="field"><label>Log Date</label><input type="date" id="rev-date"></div>
+          <div class="field"><label>Foreman Name</label><input type="text" id="rev-foreman" placeholder="Name"></div>
         </div>
         <div class="form-row">
-          <div class="field">
-            <label>Site / Location</label>
-            <input type="text" id="rev-site" placeholder="Site name or address">
-          </div>
-          <div class="field">
-            <label>Legibility</label>
-            <input type="text" id="rev-legibility" readonly style="background:var(--surface)">
-          </div>
+          <div class="field"><label>Site / Location</label><input type="text" id="rev-site" placeholder="Site name or address"></div>
+          <div class="field"><label>Legibility</label><input type="text" id="rev-legibility" readonly style="background:var(--surface)"></div>
         </div>
         <div class="field checkbox-row">
           <input type="checkbox" id="rev-signed">
           <label for="rev-signed">Log is signed by foreman</label>
         </div>
       </div>
-
       <div class="form-card">
         <h3>Worker Entries</h3>
         <div class="table-wrap" style="margin-bottom:0;">
           <table>
-            <thead>
-              <tr>
-                <th style="width:26px;"></th>
-                <th>Worker Name</th>
-                <th>Start</th>
-                <th>End</th>
-                <th>Hours</th>
-                <th style="width:36px;"></th>
-              </tr>
-            </thead>
+            <thead><tr><th style="width:26px;"></th><th>Worker Name</th><th>Start</th><th>End</th><th>Hours</th><th style="width:36px;"></th></tr></thead>
             <tbody id="rev-workers-body"></tbody>
           </table>
           <div class="table-actions-row">
-            <div class="worker-summary" id="rev-summary">—</div>
+            <div class="worker-summary" id="rev-summary">&#8212;</div>
             <button class="btn btn-secondary btn-sm" onclick="addWorkerRow('rev-workers-body')">+ Add Row</button>
           </div>
         </div>
       </div>
-
       <div class="form-card" id="ai-notes-card" style="display:none;">
         <h3>AI Notes</h3>
         <div class="ai-notes-block" id="rev-ai-notes"></div>
       </div>
-
       <div class="form-actions" style="border-top:none;padding-top:0;margin-top:0;">
         <button class="btn btn-secondary" onclick="cancelUpload()">Cancel</button>
-        <button class="btn btn-primary" onclick="saveLog()">
+        <button class="btn btn-primary" id="save-log-btn" onclick="saveLog()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
           Save Log
         </button>
@@ -967,15 +402,12 @@
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════
-       VIEW 4: Log Detail
-  ══════════════════════════════════════════ -->
+  <!-- VIEW: Log Detail -->
   <div id="view-log-detail" class="view">
     <button class="back-link" onclick="showProjectDetail(currentProjectId)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 5l-7 7 7 7"/></svg>
       Back to Project
     </button>
-
     <div class="view-header">
       <div class="view-header-left">
         <h2 id="ld-title">Labor Log</h2>
@@ -996,699 +428,565 @@
         </button>
       </div>
     </div>
-
-    <!-- Original photo viewer (collapsible) -->
     <div id="ld-photo-panel" class="form-card" style="display:none;margin-bottom:20px;">
       <h3>Original Log Photo</h3>
       <img id="ld-photo-img" alt="Original log photo" style="max-width:100%;max-height:480px;object-fit:contain;border-radius:var(--radius);display:block;margin:0 auto;">
     </div>
-
     <div class="log-meta" id="ld-meta"></div>
-
     <div id="ld-ai-notes" class="ai-notes-block" style="display:none;"></div>
-
     <div class="form-card">
       <h3>Worker Entries</h3>
       <div class="table-wrap" style="margin-bottom:0;">
         <table>
-          <thead>
-            <tr>
-              <th style="width:26px;"></th>
-              <th>Worker Name</th>
-              <th>Start</th>
-              <th>End</th>
-              <th>Hours</th>
-              <th style="width:36px;"></th>
-            </tr>
-          </thead>
+          <thead><tr><th style="width:26px;"></th><th>Worker Name</th><th>Start</th><th>End</th><th>Hours</th><th style="width:36px;"></th></tr></thead>
           <tbody id="ld-workers-body"></tbody>
         </table>
         <div class="table-actions-row">
-          <div class="worker-summary" id="ld-summary">—</div>
+          <div class="worker-summary" id="ld-summary">&#8212;</div>
           <button class="btn btn-secondary btn-sm" onclick="addWorkerRow('ld-workers-body')">+ Add Row</button>
         </div>
       </div>
     </div>
-
     <div id="ld-save-success" class="alert alert-success" style="display:none;">Changes saved successfully.</div>
   </div>
 
 </main>
 
-<script>
-// ══════════════════════════════════════════════════════
-// Data layer
-// ══════════════════════════════════════════════════════
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+import { getFirestore, collection, doc, addDoc, setDoc, updateDoc, deleteDoc,
+         onSnapshot, query, orderBy, getDoc, writeBatch }
+  from "https://www.gstatic.com/firebasejs/11.9.1/firebase-firestore.js";
 
-const LS_PROJECTS = 'fll_projects';
-const LS_LOGS     = 'fll_logs';
-const LS_API_KEY  = 'fll_api_key';
+const firebaseConfig = {
+  apiKey:            "AIzaSyBb-E93jBWyXB_sa1ABBGbriIexbatyozk",
+  authDomain:        "laborlog-d90ee.firebaseapp.com",
+  projectId:         "laborlog-d90ee",
+  storageBucket:     "laborlog-d90ee.firebasestorage.app",
+  messagingSenderId: "918611231274",
+  appId:             "1:918611231274:web:3273c3d9a9320e0489f953"
+};
 
-function getProjects() { return JSON.parse(localStorage.getItem(LS_PROJECTS) || '[]'); }
-function getLogs()     { return JSON.parse(localStorage.getItem(LS_LOGS)     || '[]'); }
-function saveProjects(arr) { localStorage.setItem(LS_PROJECTS, JSON.stringify(arr)); }
-function saveLogs(arr)     { localStorage.setItem(LS_LOGS,     JSON.stringify(arr)); }
+const app = initializeApp(firebaseConfig);
+const db  = getFirestore(app);
 
-function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+const projectsCol = collection(db, 'projects');
+const logsCol     = collection(db, 'logs');
 
-// ══════════════════════════════════════════════════════
 // State
-// ══════════════════════════════════════════════════════
-
-let currentProjectId = null;
-let currentLogId = null;
+let allProjects = [];
+let allLogs     = [];
+window.currentProjectId = null;
+window.currentLogId     = null;
 let selectedImageBase64 = null;
-let selectedImageType = 'image/jpeg';
+let selectedImageType   = 'image/jpeg';
 
-// ══════════════════════════════════════════════════════
-// View routing
-// ══════════════════════════════════════════════════════
+// Sync dot
+const syncDot = document.getElementById('sync-dot');
+const setSyncing  = () => syncDot.className = 'sync-dot syncing';
+const setConnected = () => syncDot.className = 'sync-dot connected';
 
-function showView(name) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.getElementById('view-' + name).classList.add('active');
+// Boot
+function boot() {
+  onSnapshot(query(projectsCol, orderBy('createdAt','asc')), snap => {
+    allProjects = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    setConnected();
+    refreshActiveView();
+  }, e => console.error(e));
+
+  onSnapshot(query(logsCol, orderBy('createdAt','asc')), snap => {
+    allLogs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    setConnected();
+    refreshActiveView();
+  }, e => console.error(e));
+
+  setTimeout(() => {
+    document.getElementById('app-loading').style.display = 'none';
+    document.getElementById('app-body').style.display = 'block';
+  }, 900);
 }
 
-// ══════════════════════════════════════════════════════
-// PROJECTS VIEW
-// ══════════════════════════════════════════════════════
+function refreshActiveView() {
+  const id = document.querySelector('.view.active')?.id;
+  if (id === 'view-projects')       renderProjects();
+  if (id === 'view-project-detail') showProjectDetail(window.currentProjectId);
+}
 
+// View routing
+window.showView = name => {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById('view-' + name).classList.add('active');
+};
+
+// ── Projects ──────────────────────────────────────────────
 function renderProjects() {
-  const projects = getProjects();
-  const logs = getLogs();
   const grid = document.getElementById('projects-grid');
-
-  if (projects.length === 0) {
-    grid.innerHTML = `
-      <div class="empty-state" style="grid-column:1/-1;">
-        <div class="empty-icon">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-        </div>
-        <h3>No projects yet</h3>
-        <p>Create your first project to start logging field labor.</p>
-        <button class="btn btn-primary" onclick="showNewProjectForm()">Create project</button>
-      </div>`;
+  if (!allProjects.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
+      <div class="empty-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
+      <h3>No projects yet</h3><p>Create your first project to start logging field labor.</p>
+      <button class="btn btn-primary" onclick="showNewProjectForm()">Create project</button>
+    </div>`;
     return;
   }
-
-  grid.innerHTML = projects.map(p => {
-    const pLogs = logs.filter(l => l.projectId === p.id);
-    const totalHours = pLogs.reduce((sum, l) => sum + (l.workers || []).reduce((s, w) => s + (parseFloat(w.hours) || 0), 0), 0);
-    return `
-      <div class="card card-clickable project-card" onclick="showProjectDetail('${p.id}')">
-        <div class="card-inner">
-          <div class="card-top">
-            <div>
-              <div class="card-name">${esc(p.name)}</div>
-              <div class="card-client">${esc(p.client || '—')}</div>
-              ${p.address ? `<div class="card-address"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${esc(p.address)}</div>` : ''}
-            </div>
-            <div>${statusBadge(p.status)}</div>
+  grid.innerHTML = allProjects.slice().reverse().map(p => {
+    const pLogs = allLogs.filter(l => l.projectId === p.id);
+    const hrs   = pLogs.reduce((s,l)=>s+(l.workers||[]).reduce((a,w)=>a+(parseFloat(w.hours)||0),0),0);
+    return `<div class="card card-clickable project-card" onclick="showProjectDetail('${p.id}')">
+      <div class="card-inner">
+        <div class="card-top">
+          <div>
+            <div class="card-name">${esc(p.name)}</div>
+            <div class="card-client">${esc(p.client||'&#8212;')}</div>
+            ${p.address?`<div class="card-address"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${esc(p.address)}</div>`:''}
           </div>
-          <div class="card-stats">
-            <div class="stat"><div class="stat-val">${pLogs.length}</div><div class="stat-lbl">Logs</div></div>
-            <div class="stat"><div class="stat-val">${totalHours.toFixed(1)}</div><div class="stat-lbl">Total Hrs</div></div>
-          </div>
+          <div>${statusBadge(p.status)}</div>
         </div>
-      </div>`;
+        <div class="card-stats">
+          <div class="stat"><div class="stat-val">${pLogs.length}</div><div class="stat-lbl">Logs</div></div>
+          <div class="stat"><div class="stat-val">${hrs.toFixed(1)}</div><div class="stat-lbl">Total Hrs</div></div>
+        </div>
+      </div>
+    </div>`;
   }).join('');
 }
 
-function showNewProjectForm() {
+window.showNewProjectForm = () => {
   document.getElementById('new-project-form').style.display = 'block';
   document.getElementById('np-name').focus();
-}
-
-function hideNewProjectForm() {
+};
+window.hideNewProjectForm = () => {
   document.getElementById('new-project-form').style.display = 'none';
   ['np-name','np-client','np-address'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('np-status').value = 'Active';
-}
-
-function createProject() {
+};
+window.createProject = async () => {
   const name = document.getElementById('np-name').value.trim();
   if (!name) { document.getElementById('np-name').focus(); return; }
-  const projects = getProjects();
-  const p = {
-    id: uid(),
-    name,
-    client: document.getElementById('np-client').value.trim(),
-    address: document.getElementById('np-address').value.trim(),
-    status: document.getElementById('np-status').value,
-    createdAt: new Date().toISOString()
-  };
-  projects.push(p);
-  saveProjects(projects);
-  hideNewProjectForm();
-  renderProjects();
-}
+  setSyncing();
+  try {
+    await addDoc(projectsCol, {
+      name,
+      client:    document.getElementById('np-client').value.trim(),
+      address:   document.getElementById('np-address').value.trim(),
+      status:    document.getElementById('np-status').value,
+      createdAt: new Date().toISOString()
+    });
+    window.hideNewProjectForm();
+  } catch(e) { showToast('Error: ' + e.message); }
+};
+window.deleteProject = async () => {
+  const p = allProjects.find(x => x.id === window.currentProjectId);
+  const cnt = allLogs.filter(l => l.projectId === window.currentProjectId).length;
+  const msg = cnt
+    ? `Delete "${p?.name}"? This will also delete all ${cnt} log${cnt===1?'':'s'}. Cannot be undone.`
+    : `Delete "${p?.name}"? Cannot be undone.`;
+  if (!confirm(msg)) return;
+  setSyncing();
+  try {
+    const batch = writeBatch(db);
+    allLogs.filter(l => l.projectId === window.currentProjectId).forEach(l => {
+      batch.delete(doc(db,'logs',l.id));
+      batch.delete(doc(db,'logImages',l.id));
+    });
+    batch.delete(doc(db,'projects',window.currentProjectId));
+    await batch.commit();
+    window.showView('projects');
+  } catch(e) { showToast('Error: ' + e.message); }
+};
 
-// ══════════════════════════════════════════════════════
-// PROJECT DETAIL VIEW
-// ══════════════════════════════════════════════════════
-
-function showProjectDetail(projectId) {
-  currentProjectId = projectId;
-  const projects = getProjects();
-  const p = projects.find(x => x.id === projectId);
-  if (!p) { showView('projects'); return; }
-
-  const logs = getLogs().filter(l => l.projectId === projectId);
-  const totalHours = logs.reduce((sum, l) => sum + (l.workers||[]).reduce((s,w) => s+(parseFloat(w.hours)||0),0),0);
+// ── Project Detail ────────────────────────────────────────
+window.showProjectDetail = (projectId) => {
+  window.currentProjectId = projectId;
+  const p = allProjects.find(x => x.id === projectId);
+  if (!p) { window.showView('projects'); return; }
+  const logs = allLogs.filter(l => l.projectId === projectId);
+  const hrs  = logs.reduce((s,l)=>s+(l.workers||[]).reduce((a,w)=>a+(parseFloat(w.hours)||0),0),0);
 
   document.getElementById('pd-name').textContent = p.name;
-  document.getElementById('pd-sub').textContent = p.client ? `Client: ${p.client}` : '';
-
-  // Meta block
+  document.getElementById('pd-sub').textContent  = p.client ? 'Client: ' + p.client : '';
   document.getElementById('pd-project-meta').innerHTML = `
-    <div class="pm-item"><div class="pm-label">Client</div><div class="pm-val">${esc(p.client||'—')}</div></div>
-    <div class="pm-item"><div class="pm-label">Site Address</div><div class="pm-val">${esc(p.address||'—')}</div></div>
+    <div class="pm-item"><div class="pm-label">Client</div><div class="pm-val">${esc(p.client||'&#8212;')}</div></div>
+    <div class="pm-item"><div class="pm-label">Site Address</div><div class="pm-val">${esc(p.address||'&#8212;')}</div></div>
     <div class="pm-item"><div class="pm-label">Status</div><div class="pm-val">${statusBadge(p.status)}</div></div>
-    <div class="pm-item"><div class="pm-label">Created</div><div class="pm-val">${formatDate(p.createdAt)}</div></div>
-  `;
-
-  // Chips — no "needs review" at project level; that detail lives inside each log
+    <div class="pm-item"><div class="pm-label">Created</div><div class="pm-val">${formatDate(p.createdAt)}</div></div>`;
   document.getElementById('pd-chips').innerHTML = `
     <div class="chip chip-blue"><div class="chip-val">${logs.length}</div><div class="chip-lbl">Total Logs</div></div>
-    <div class="chip"><div class="chip-val">${totalHours.toFixed(1)}</div><div class="chip-lbl">Total Hours</div></div>
-  `;
+    <div class="chip"><div class="chip-val">${hrs.toFixed(1)}</div><div class="chip-lbl">Total Hours</div></div>`;
 
-  // Logs table
   const tbody = document.getElementById('pd-logs-body');
   const empty = document.getElementById('pd-empty');
-  const tableWrap = document.getElementById('pd-logs-wrap');
-
-  if (logs.length === 0) {
-    tableWrap.style.display = 'none';
-    empty.style.display = 'block';
-  } else {
-    tableWrap.style.display = 'block';
-    empty.style.display = 'none';
+  const wrap  = document.getElementById('pd-logs-wrap');
+  if (!logs.length) { wrap.style.display='none'; empty.style.display='block'; }
+  else {
+    wrap.style.display='block'; empty.style.display='none';
     tbody.innerHTML = logs.slice().reverse().map(l => {
-      const hrs = (l.workers||[]).reduce((s,w)=>s+(parseFloat(w.hours)||0),0);
-      const reviewCount = (l.workers||[]).filter(w=>w.needsReview).length;
-      return `
-        <tr>
-          <td>${l.date || '—'}</td>
-          <td>${esc(l.foreman||'—')}</td>
-          <td>${esc(l.site||'—')}</td>
-          <td style="font-family:var(--font-mono)">${(l.workers||[]).length}</td>
-          <td style="font-family:var(--font-mono)">${hrs.toFixed(1)}</td>
-          <td>${legibilityBadge(l.legibility)}</td>
-          <td>${l.signed ? '<span style="color:var(--green)">✓</span>' : '<span style="color:var(--ink-faint)">—</span>'}</td>
-          <td><button class="btn btn-secondary btn-sm" onclick="showLogDetail('${l.id}')">View</button></td>
-        </tr>`;
+      const lHrs = (l.workers||[]).reduce((s,w)=>s+(parseFloat(w.hours)||0),0);
+      return `<tr>
+        <td>${l.date||'&#8212;'}</td>
+        <td>${esc(l.foreman||'&#8212;')}</td>
+        <td>${esc(l.site||'&#8212;')}</td>
+        <td style="font-family:var(--font-mono)">${(l.workers||[]).length}</td>
+        <td style="font-family:var(--font-mono)">${lHrs.toFixed(1)}</td>
+        <td>${legibilityBadge(l.legibility)}</td>
+        <td>${l.signed?'<span style="color:var(--green)">&#10003;</span>':'<span style="color:var(--ink-faint)">&#8212;</span>'}</td>
+        <td><button class="btn btn-secondary btn-sm" onclick="showLogDetail('${l.id}')">View</button></td>
+      </tr>`;
     }).join('');
   }
+  window.showView('project-detail');
+};
 
-  showView('project-detail');
-}
-
-// ══════════════════════════════════════════════════════
-// UPLOAD & EXTRACT VIEW
-// ══════════════════════════════════════════════════════
-
-function goToUpload() {
-  // Reset state
+// ── Upload & Extract ──────────────────────────────────────
+window.goToUpload = () => {
   selectedImageBase64 = null;
   document.getElementById('file-input').value = '';
   document.getElementById('preview-img').style.display = 'none';
-  document.getElementById('upload-zone').classList.remove('has-image');
-  document.getElementById('upload-zone').querySelector('.upload-icon').style.display = '';
-  document.getElementById('upload-zone').querySelector('h4').style.display = '';
-  document.getElementById('upload-zone').querySelector('p').style.display = '';
+  const zone = document.getElementById('upload-zone');
+  zone.classList.remove('has-image');
+  zone.querySelector('.upload-icon').style.display = '';
+  zone.querySelector('h4').style.display = '';
+  zone.querySelector('p').style.display = '';
   document.getElementById('extract-spinner').style.display = 'none';
   document.getElementById('extract-error').style.display = 'none';
   document.getElementById('review-section').style.display = 'none';
   document.getElementById('rev-workers-body').innerHTML = '';
-
-  // Pre-fill API key
-  const saved = localStorage.getItem(LS_API_KEY) || '';
-  document.getElementById('api-key-input').value = saved;
-
-  const projects = getProjects();
-  const p = projects.find(x => x.id === currentProjectId);
+  document.getElementById('api-key-input').value = localStorage.getItem('fll_api_key') || '';
+  const p = allProjects.find(x => x.id === window.currentProjectId);
   document.getElementById('upload-project-name').textContent = p ? p.name : '';
-
   checkExtractReady();
-  showView('upload');
-}
+  window.showView('upload');
+};
+window.cancelUpload = () => window.showProjectDetail(window.currentProjectId);
 
-function handleFileSelect(e) {
+window.handleFileSelect = e => {
   const file = e.target.files[0];
   if (!file) return;
-  selectedImageType = file.type || 'image/jpeg';
-
   const reader = new FileReader();
   reader.onload = ev => {
-    const dataUrl = ev.target.result;
-    selectedImageBase64 = dataUrl.split(',')[1];
-
-    const img = document.getElementById('preview-img');
-    img.src = dataUrl;
-    img.style.display = 'block';
-
-    const zone = document.getElementById('upload-zone');
-    zone.classList.add('has-image');
-    zone.querySelector('.upload-icon').style.display = 'none';
-    zone.querySelector('h4').style.display = 'none';
-    zone.querySelector('p').style.display = 'none';
-
-    checkExtractReady();
+    const original = new Image();
+    original.onload = () => {
+      // Compress: max 1200px wide, JPEG quality 0.72
+      const MAX = 1200;
+      let w = original.width, h = original.height;
+      if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(original, 0, 0, w, h);
+      const compressed = canvas.toDataURL('image/jpeg', 0.72);
+      selectedImageBase64 = compressed.split(',')[1];
+      selectedImageType   = 'image/jpeg';
+      const img = document.getElementById('preview-img');
+      img.src = compressed; img.style.display = 'block';
+      const zone = document.getElementById('upload-zone');
+      zone.classList.add('has-image');
+      zone.querySelector('.upload-icon').style.display = 'none';
+      zone.querySelector('h4').style.display = 'none';
+      zone.querySelector('p').style.display = 'none';
+      checkExtractReady();
+    };
+    original.src = ev.target.result;
   };
   reader.readAsDataURL(file);
-}
+};
 
 function checkExtractReady() {
-  const hasImg = !!selectedImageBase64;
-  const hasKey = document.getElementById('api-key-input').value.trim().length > 10;
-  document.getElementById('extract-btn').disabled = !(hasImg && hasKey);
+  document.getElementById('extract-btn').disabled =
+    !(selectedImageBase64 && document.getElementById('api-key-input').value.trim().length > 10);
 }
+window.checkExtractReady = checkExtractReady;
 
-function toggleKeyVisibility() {
+window.toggleKeyVisibility = () => {
   const inp = document.getElementById('api-key-input');
   inp.type = inp.type === 'password' ? 'text' : 'password';
-}
+};
+window.saveApiKey = () => {
+  const v = document.getElementById('api-key-input').value.trim();
+  if (v) { localStorage.setItem('fll_api_key', v); showToast('API key saved.'); }
+};
 
-function saveApiKey() {
-  const val = document.getElementById('api-key-input').value.trim();
-  if (val) { localStorage.setItem(LS_API_KEY, val); showToast('API key saved.'); }
-}
-
-async function extractData() {
+window.extractData = async () => {
   const apiKey = document.getElementById('api-key-input').value.trim();
   if (!apiKey || !selectedImageBase64) return;
-
-  // Save key
-  localStorage.setItem(LS_API_KEY, apiKey);
-
+  localStorage.setItem('fll_api_key', apiKey);
   document.getElementById('extract-btn').disabled = true;
   document.getElementById('extract-spinner').style.display = 'block';
   document.getElementById('extract-error').style.display = 'none';
   document.getElementById('review-section').style.display = 'none';
-
   try {
     const mediaType = selectedImageType.startsWith('image/') ? selectedImageType : 'image/jpeg';
-
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
+      headers: { 'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
+        model: 'claude-sonnet-4-6', max_tokens: 1000,
         system: `You are an expert at reading handwritten and printed paper labor logs from construction sites. Extract all data from the image and return ONLY valid JSON — no markdown, no explanation. Schema: { "date": "string or null", "foreman": "string or null", "site": "string or null", "signed": true or false, "overall_legibility": "good" or "partial" or "poor", "ai_notes": "string", "workers": [ { "name": "string", "start_time": "string or null", "end_time": "string or null", "hours": number or null, "needs_review": true or false } ] }. Set needs_review: true for any row that was unclear or required a guess.`,
-        messages: [{
-          role: 'user',
-          content: [
-            { type: 'image', source: { type: 'base64', media_type: mediaType, data: selectedImageBase64 } },
-            { type: 'text', text: 'Extract all labor log data from this image.' }
-          ]
-        }]
+        messages: [{ role:'user', content:[
+          { type:'image', source:{ type:'base64', media_type:mediaType, data:selectedImageBase64 } },
+          { type:'text', text:'Extract all labor log data from this image.' }
+        ]}]
       })
     });
-
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      throw new Error(err.error?.message || `API error ${response.status}`);
-    }
-
-    const data = await response.json();
-    let rawText = data.content[0].text;
-
-    // Strip possible markdown fences
-    rawText = rawText.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
-
-    const extracted = JSON.parse(rawText);
+    if (!res.ok) { const e = await res.json().catch(()=>({})); throw new Error(e.error?.message||`API error ${res.status}`); }
+    const data = await res.json();
+    const extracted = JSON.parse(data.content[0].text.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim());
     populateReviewForm(extracted);
     document.getElementById('review-section').style.display = 'block';
-    document.getElementById('review-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-  } catch (err) {
-    const errEl = document.getElementById('extract-error');
-    errEl.textContent = 'Extraction failed: ' + err.message;
-    errEl.style.display = 'block';
+    document.getElementById('review-section').scrollIntoView({ behavior:'smooth', block:'start' });
+  } catch(e) {
+    const el = document.getElementById('extract-error');
+    el.textContent = 'Extraction failed: ' + e.message;
+    el.style.display = 'block';
   } finally {
     document.getElementById('extract-spinner').style.display = 'none';
     document.getElementById('extract-btn').disabled = false;
     checkExtractReady();
   }
+};
+
+function populateReviewForm(x) {
+  let dv = '';
+  if (x.date) { const d = new Date(x.date); dv = isNaN(d) ? x.date : d.toISOString().split('T')[0]; }
+  document.getElementById('rev-date').value    = dv;
+  document.getElementById('rev-foreman').value = x.foreman || '';
+  document.getElementById('rev-site').value    = x.site    || '';
+  document.getElementById('rev-signed').checked = !!x.signed;
+  const leg = (x.overall_legibility||'unknown').toLowerCase();
+  document.getElementById('rev-legibility').value = leg.charAt(0).toUpperCase()+leg.slice(1);
+  const nc = document.getElementById('ai-notes-card');
+  const ne = document.getElementById('rev-ai-notes');
+  if (x.ai_notes) { ne.innerHTML = '<strong>AI Notes</strong>'+esc(x.ai_notes); nc.style.display='block'; }
+  else nc.style.display = 'none';
+  const tb = document.getElementById('rev-workers-body');
+  tb.innerHTML = '';
+  (x.workers||[]).forEach(w => appendWorkerRow(tb, w));
+  updateWorkerSummary('rev-workers-body','rev-summary');
 }
 
-function populateReviewForm(extracted) {
-  // Date: try to normalize to YYYY-MM-DD
-  let dateVal = '';
-  if (extracted.date) {
-    const d = new Date(extracted.date);
-    if (!isNaN(d)) {
-      dateVal = d.toISOString().split('T')[0];
-    } else {
-      dateVal = extracted.date;
+window.saveLog = async () => {
+  const btn = document.getElementById('save-log-btn');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  setSyncing();
+  try {
+    const workers = getWorkersFromBody('rev-workers-body');
+    const logData = {
+      projectId:  window.currentProjectId,
+      date:       document.getElementById('rev-date').value,
+      foreman:    document.getElementById('rev-foreman').value.trim(),
+      site:       document.getElementById('rev-site').value.trim(),
+      signed:     document.getElementById('rev-signed').checked,
+      legibility: document.getElementById('rev-legibility').value.toLowerCase(),
+      aiNotes:    document.getElementById('rev-ai-notes').textContent.replace(/^AI Notes/,'').trim(),
+      createdAt:  new Date().toISOString(),
+      workers
+    };
+    const logRef = await addDoc(logsCol, logData);
+    if (selectedImageBase64) {
+      // Store compressed image in Firestore (kept small by canvas compression above)
+      await setDoc(doc(db,'logImages',logRef.id), {
+        imageData: `data:image/jpeg;base64,${selectedImageBase64}`
+      });
     }
+    window.showProjectDetail(window.currentProjectId);
+  } catch(e) { showToast('Error saving log: ' + e.message); }
+  finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Log';
   }
-  document.getElementById('rev-date').value = dateVal;
-  document.getElementById('rev-foreman').value = extracted.foreman || '';
-  document.getElementById('rev-site').value = extracted.site || '';
-  document.getElementById('rev-signed').checked = !!extracted.signed;
+};
 
-  const leg = (extracted.overall_legibility || 'unknown').toLowerCase();
-  const legEl = document.getElementById('rev-legibility');
-  legEl.value = leg.charAt(0).toUpperCase() + leg.slice(1);
+// ── Log Detail ────────────────────────────────────────────
+window.showLogDetail = async logId => {
+  window.currentLogId = logId;
+  const log = allLogs.find(l => l.id === logId);
+  if (!log) { window.showProjectDetail(window.currentProjectId); return; }
 
-  const notesCard = document.getElementById('ai-notes-card');
-  const notesEl = document.getElementById('rev-ai-notes');
-  if (extracted.ai_notes) {
-    notesEl.innerHTML = `<strong>AI Notes</strong>${esc(extracted.ai_notes)}`;
-    notesCard.style.display = 'block';
-  } else {
-    notesCard.style.display = 'none';
-  }
+  document.getElementById('ld-title').textContent = log.date ? 'Log \u2014 ' + log.date : 'Labor Log';
+  document.getElementById('ld-sub').textContent   = log.foreman ? 'Foreman: ' + log.foreman : '';
 
-  const tbody = document.getElementById('rev-workers-body');
+  // Fetch image
+  const photoBtn   = document.getElementById('ld-view-photo-btn');
+  const photoPanel = document.getElementById('ld-photo-panel');
+  const photoImg   = document.getElementById('ld-photo-img');
+  photoBtn.style.display = 'none'; photoPanel.style.display = 'none';
+  try {
+    const imgSnap = await getDoc(doc(db,'logImages',logId));
+    if (imgSnap.exists()) {
+      photoImg.src = imgSnap.data().imageData;
+      photoBtn.style.display = '';
+      photoBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> View Photo';
+    }
+  } catch(e) { /* no image for this log */ }
+
+  const rc = (log.workers||[]).filter(w=>w.needsReview).length;
+  document.getElementById('ld-meta').innerHTML = `
+    <div class="log-meta-item"><div class="lm-label">Date</div><div class="lm-val">${log.date||'&#8212;'}</div></div>
+    <div class="log-meta-item"><div class="lm-label">Foreman</div><div class="lm-val">${esc(log.foreman||'&#8212;')}</div></div>
+    <div class="log-meta-item"><div class="lm-label">Site</div><div class="lm-val">${esc(log.site||'&#8212;')}</div></div>
+    <div class="log-meta-item"><div class="lm-label">Legibility</div><div class="lm-val">${legibilityBadge(log.legibility)}</div></div>
+    <div class="log-meta-item"><div class="lm-label">Signed</div><div class="lm-val">${log.signed?'<span style="color:var(--green);font-weight:600">&#10003; Yes</span>':'<span style="color:var(--ink-faint)">No</span>'}</div></div>
+    ${rc?`<div class="log-meta-item"><div class="lm-label">Needs Review</div><div class="lm-val"><span class="badge badge-amber">${rc} entr${rc===1?'y':'ies'}</span></div></div>`:''}
+    <div class="log-meta-item"><div class="lm-label">Created</div><div class="lm-val">${formatDate(log.createdAt)}</div></div>`;
+
+  const aiEl = document.getElementById('ld-ai-notes');
+  if (log.aiNotes) { aiEl.innerHTML = '<strong>AI Notes</strong>'+esc(log.aiNotes); aiEl.style.display='block'; }
+  else aiEl.style.display = 'none';
+
+  const tbody = document.getElementById('ld-workers-body');
   tbody.innerHTML = '';
-  (extracted.workers || []).forEach(w => {
-    appendWorkerRow(tbody, w);
-  });
+  (log.workers||[]).forEach(w => appendWorkerRow(tbody, { name:w.name,start_time:w.startTime,end_time:w.endTime,hours:w.hours,needs_review:w.needsReview }));
+  updateWorkerSummary('ld-workers-body','ld-summary');
+  document.getElementById('ld-save-success').style.display = 'none';
+  window.showView('log-detail');
+};
 
-  updateWorkerSummary('rev-workers-body', 'rev-summary');
-}
+window.toggleLogPhoto = () => {
+  const panel = document.getElementById('ld-photo-panel');
+  const btn   = document.getElementById('ld-view-photo-btn');
+  const hidden = panel.style.display === 'none';
+  panel.style.display = hidden ? 'block' : 'none';
+  btn.innerHTML = hidden
+    ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg> Hide Photo'
+    : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> View Photo';
+  if (hidden) panel.scrollIntoView({ behavior:'smooth', block:'start' });
+};
 
-function addWorkerRow(tbodyId) {
-  const tbody = document.getElementById(tbodyId);
-  appendWorkerRow(tbody, { name:'', start_time:'', end_time:'', hours:null, needs_review:false });
-  const summaryId = tbodyId === 'rev-workers-body' ? 'rev-summary' : 'ld-summary';
-  updateWorkerSummary(tbodyId, summaryId);
-}
+window.saveLogEdits = async () => {
+  setSyncing();
+  try {
+    await updateDoc(doc(db,'logs',window.currentLogId), { workers: getWorkersFromBody('ld-workers-body') });
+    const ok = document.getElementById('ld-save-success');
+    ok.style.display = 'block';
+    setTimeout(() => ok.style.display = 'none', 2500);
+  } catch(e) { showToast('Error: ' + e.message); }
+};
+
+window.deleteLog = async () => {
+  if (!confirm('Delete this log? This cannot be undone.')) return;
+  setSyncing();
+  try {
+    const batch = writeBatch(db);
+    batch.delete(doc(db,'logs',window.currentLogId));
+    batch.delete(doc(db,'logImages',window.currentLogId));
+    await batch.commit();
+    window.showProjectDetail(window.currentProjectId);
+  } catch(e) { showToast('Error: ' + e.message); }
+};
+
+// ── CSV Export ────────────────────────────────────────────
+window.exportCSV = () => {
+  const logs = allLogs.filter(l => l.projectId === window.currentProjectId);
+  if (!logs.length) { alert('No logs to export.'); return; }
+  const rows = [['Log Date','Foreman','Site','Worker Name','Start Time','End Time','Hours','Needs Review']];
+  logs.forEach(l => (l.workers||[]).forEach(w =>
+    rows.push([l.date||'',l.foreman||'',l.site||'',w.name||'',w.startTime||'',w.endTime||'',w.hours||'',w.needsReview?'Yes':'No'])
+  ));
+  const csv  = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv],{type:'text/csv'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href = url;
+  const p = allProjects.find(x=>x.id===window.currentProjectId);
+  a.download = `${(p?.name||'project').replace(/\s+/g,'_')}_labor_logs.csv`;
+  a.click(); URL.revokeObjectURL(url);
+};
+
+// ── Worker table helpers ──────────────────────────────────
+window.addWorkerRow = tbodyId => {
+  appendWorkerRow(document.getElementById(tbodyId), {name:'',start_time:'',end_time:'',hours:null,needs_review:false});
+  updateWorkerSummary(tbodyId, tbodyId==='rev-workers-body'?'rev-summary':'ld-summary');
+};
 
 function appendWorkerRow(tbody, w) {
   const tr = document.createElement('tr');
   if (w.needs_review) tr.classList.add('tr-review');
   tr.dataset.needsReview = w.needs_review ? '1' : '0';
-
   tr.innerHTML = `
-    <td>
-      <span class="dot ${w.needs_review ? 'dot-amber' : 'dot-green'}"></span>
-    </td>
-    <td><input class="cell-input cell-input-name" type="text" value="${esc(w.name||'')}" placeholder="Name" oninput="updateDot(this)"></td>
+    <td><span class="dot ${w.needs_review?'dot-amber':'dot-green'}"></span></td>
+    <td><input class="cell-input cell-input-name" type="text" value="${esc(w.name||'')}" placeholder="Name"></td>
     <td><input class="cell-input" type="text" value="${esc(w.start_time||'')}" placeholder="07:00" style="max-width:80px" onblur="recalcHours(this)"></td>
     <td><input class="cell-input" type="text" value="${esc(w.end_time||'')}" placeholder="15:30" style="max-width:80px" onblur="recalcHours(this)"></td>
-    <td><input class="cell-input" type="number" min="0" max="24" step="0.25" value="${w.hours !== null && w.hours !== undefined ? w.hours : ''}" placeholder="—" style="max-width:70px" oninput="onHoursInput(this)"></td>
-    <td>
-      <button class="delete-row-btn" onclick="deleteWorkerRow(this)" title="Remove row">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </td>`;
-
+    <td><input class="cell-input" type="number" min="0" max="24" step="0.25" value="${w.hours!=null?w.hours:''}" placeholder="&#8212;" style="max-width:70px" oninput="onHoursInput(this)"></td>
+    <td><button class="delete-row-btn" onclick="deleteWorkerRow(this)" title="Remove">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button></td>`;
   tbody.appendChild(tr);
 }
 
-function deleteWorkerRow(btn) {
-  const tr = btn.closest('tr');
-  const tbody = tr.parentElement;
-  const summaryId = tbody.id === 'rev-workers-body' ? 'rev-summary' : 'ld-summary';
-  tr.remove();
-  updateWorkerSummary(tbody.id, summaryId);
-}
+window.deleteWorkerRow = btn => {
+  const tbody = btn.closest('tr').parentElement;
+  btn.closest('tr').remove();
+  updateWorkerSummary(tbody.id, tbody.id==='rev-workers-body'?'rev-summary':'ld-summary');
+};
 
-function recalcHours(inp) {
+window.recalcHours = inp => {
   const tr = inp.closest('tr');
   const cells = tr.querySelectorAll('input.cell-input');
-  // cells order: name, start, end, hours
-  const startVal = cells[1].value.trim();
-  const endVal   = cells[2].value.trim();
-  if (startVal && endVal) {
-    const start = parseTime(startVal);
-    const end   = parseTime(endVal);
-    if (start !== null && end !== null && end >= start) {
-      const hrs = (end - start) / 60;
-      cells[3].value = hrs.toFixed(2);
-    }
-  }
+  const s = parseTime(cells[1].value.trim()), e = parseTime(cells[2].value.trim());
+  if (s!==null && e!==null && e>=s) cells[3].value = ((e-s)/60).toFixed(2);
   const tbody = tr.parentElement;
-  const summaryId = tbody.id === 'rev-workers-body' ? 'rev-summary' : 'ld-summary';
-  updateWorkerSummary(tbody.id, summaryId);
-}
+  updateWorkerSummary(tbody.id, tbody.id==='rev-workers-body'?'rev-summary':'ld-summary');
+};
 
-function onHoursInput(inp) {
-  const tr = inp.closest('tr');
-  const tbody = tr.parentElement;
-  const summaryId = tbody.id === 'rev-workers-body' ? 'rev-summary' : 'ld-summary';
-  updateWorkerSummary(tbody.id, summaryId);
-}
+window.onHoursInput = inp => {
+  const tbody = inp.closest('tr').parentElement;
+  updateWorkerSummary(tbody.id, tbody.id==='rev-workers-body'?'rev-summary':'ld-summary');
+};
 
-function updateDot(inp) {
-  // Optionally mark as needing review if name cleared
-}
-
-function parseTime(str) {
-  // supports "7:30", "07:30", "730", "7", "07", "7:30 AM"
-  str = str.toUpperCase().replace(/\s/g,'');
-  let h, m = 0;
-  const ampm = str.endsWith('AM') || str.endsWith('PM');
-  if (ampm) {
-    const isPM = str.endsWith('PM');
-    str = str.replace('AM','').replace('PM','');
-    if (str.includes(':')) { [h,m] = str.split(':').map(Number); }
-    else if (str.length <= 2) { h = Number(str); }
-    else { h = Number(str.slice(0,-2)); m = Number(str.slice(-2)); }
-    if (isPM && h !== 12) h += 12;
-    if (!isPM && h === 12) h = 0;
+function parseTime(s) {
+  if (!s) return null;
+  s = s.toUpperCase().replace(/\s/g,'');
+  let h,m=0;
+  const ap = s.endsWith('AM')||s.endsWith('PM');
+  if (ap) {
+    const pm = s.endsWith('PM'); s=s.replace('AM','').replace('PM','');
+    if (s.includes(':')) [h,m]=s.split(':').map(Number);
+    else if (s.length<=2) h=Number(s);
+    else { h=Number(s.slice(0,-2)); m=Number(s.slice(-2)); }
+    if (pm&&h!==12) h+=12; if (!pm&&h===12) h=0;
   } else {
-    if (str.includes(':')) { [h,m] = str.split(':').map(Number); }
-    else if (str.length <= 2) { h = Number(str); }
-    else if (str.length === 3) { h = Number(str[0]); m = Number(str.slice(1)); }
-    else { h = Number(str.slice(0,-2)); m = Number(str.slice(-2)); }
+    if (s.includes(':')) [h,m]=s.split(':').map(Number);
+    else if (s.length<=2) h=Number(s);
+    else if (s.length===3) { h=Number(s[0]); m=Number(s.slice(1)); }
+    else { h=Number(s.slice(0,-2)); m=Number(s.slice(-2)); }
   }
-  if (isNaN(h) || isNaN(m)) return null;
-  return h * 60 + m;
+  return (isNaN(h)||isNaN(m)) ? null : h*60+m;
 }
 
 function updateWorkerSummary(tbodyId, summaryId) {
-  const tbody = document.getElementById(tbodyId);
-  const rows = Array.from(tbody.querySelectorAll('tr'));
-  let totalHrs = 0, reviewCount = 0;
+  const rows = Array.from(document.getElementById(tbodyId).querySelectorAll('tr'));
+  let hrs=0,rc=0;
   rows.forEach(tr => {
-    const hrsInp = tr.querySelectorAll('input.cell-input')[3];
-    if (hrsInp) totalHrs += parseFloat(hrsInp.value) || 0;
-    if (tr.dataset.needsReview === '1') reviewCount++;
+    hrs += parseFloat(tr.querySelectorAll('input.cell-input')[3]?.value)||0;
+    if (tr.dataset.needsReview==='1') rc++;
   });
-  const summaryEl = document.getElementById(summaryId);
-  summaryEl.innerHTML = `<strong>${rows.length}</strong> workers &nbsp;·&nbsp; <strong>${totalHrs.toFixed(2)}</strong> total hrs ${reviewCount > 0 ? `&nbsp;·&nbsp; <span style="color:var(--amber)"><strong>${reviewCount}</strong> need review</span>` : ''}`;
+  document.getElementById(summaryId).innerHTML =
+    `<strong>${rows.length}</strong> workers &nbsp;&middot;&nbsp; <strong>${hrs.toFixed(2)}</strong> total hrs`
+    + (rc ? ` &nbsp;&middot;&nbsp; <span style="color:var(--amber)"><strong>${rc}</strong> need review</span>` : '');
 }
 
 function getWorkersFromBody(tbodyId) {
-  const tbody = document.getElementById(tbodyId);
-  return Array.from(tbody.querySelectorAll('tr')).map(tr => {
-    const inputs = tr.querySelectorAll('input.cell-input');
-    return {
-      id: uid(),
-      name: inputs[0]?.value.trim() || '',
-      startTime: inputs[1]?.value.trim() || '',
-      endTime: inputs[2]?.value.trim() || '',
-      hours: parseFloat(inputs[3]?.value) || null,
-      needsReview: tr.dataset.needsReview === '1'
-    };
+  return Array.from(document.getElementById(tbodyId).querySelectorAll('tr')).map(tr => {
+    const i = tr.querySelectorAll('input.cell-input');
+    return { id:Math.random().toString(36).slice(2), name:i[0]?.value.trim()||'', startTime:i[1]?.value.trim()||'', endTime:i[2]?.value.trim()||'', hours:parseFloat(i[3]?.value)||null, needsReview:tr.dataset.needsReview==='1' };
   });
 }
 
-function saveLog() {
-  const workers = getWorkersFromBody('rev-workers-body');
-  const legRaw = document.getElementById('rev-legibility').value.toLowerCase();
-  const log = {
-    id: uid(),
-    projectId: currentProjectId,
-    date: document.getElementById('rev-date').value,
-    foreman: document.getElementById('rev-foreman').value.trim(),
-    site: document.getElementById('rev-site').value.trim(),
-    signed: document.getElementById('rev-signed').checked,
-    legibility: legRaw,
-    aiNotes: document.getElementById('rev-ai-notes').textContent.replace(/^AI Notes/,'').trim(),
-    createdAt: new Date().toISOString(),
-    imageData: selectedImageBase64 ? `data:${selectedImageType || 'image/jpeg'};base64,${selectedImageBase64}` : null,
-    workers
-  };
-
-  const logs = getLogs();
-  logs.push(log);
-  saveLogs(logs);
-  showProjectDetail(currentProjectId);
-}
-
-function cancelUpload() {
-  showProjectDetail(currentProjectId);
-}
-
-// ══════════════════════════════════════════════════════
-// LOG DETAIL VIEW
-// ══════════════════════════════════════════════════════
-
-function showLogDetail(logId) {
-  currentLogId = logId;
-  const logs = getLogs();
-  const log = logs.find(l => l.id === logId);
-  if (!log) { showProjectDetail(currentProjectId); return; }
-
-  document.getElementById('ld-title').textContent = log.date ? `Log — ${log.date}` : 'Labor Log';
-  document.getElementById('ld-sub').textContent = log.foreman ? `Foreman: ${log.foreman}` : '';
-
-  // Photo button — only show if we have a stored image
-  const photoBtn = document.getElementById('ld-view-photo-btn');
-  const photoPanel = document.getElementById('ld-photo-panel');
-  const photoImg = document.getElementById('ld-photo-img');
-  if (log.imageData) {
-    photoBtn.style.display = '';
-    photoImg.src = log.imageData;
-    photoPanel.style.display = 'none'; // collapsed by default
-    photoBtn.textContent = ''; // reset label
-    photoBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> View Photo`;
-  } else {
-    photoBtn.style.display = 'none';
-    photoPanel.style.display = 'none';
-  }
-
-  // Needs-review count — shown only inside this log
-  const reviewCount = (log.workers||[]).filter(w=>w.needsReview).length;
-
-  document.getElementById('ld-meta').innerHTML = `
-    <div class="log-meta-item"><div class="lm-label">Date</div><div class="lm-val">${log.date || '—'}</div></div>
-    <div class="log-meta-item"><div class="lm-label">Foreman</div><div class="lm-val">${esc(log.foreman||'—')}</div></div>
-    <div class="log-meta-item"><div class="lm-label">Site</div><div class="lm-val">${esc(log.site||'—')}</div></div>
-    <div class="log-meta-item"><div class="lm-label">Legibility</div><div class="lm-val">${legibilityBadge(log.legibility)}</div></div>
-    <div class="log-meta-item"><div class="lm-label">Signed</div><div class="lm-val">${log.signed ? '<span style="color:var(--green);font-weight:600">✓ Yes</span>' : '<span style="color:var(--ink-faint)">No</span>'}</div></div>
-    ${reviewCount > 0 ? `<div class="log-meta-item"><div class="lm-label">Needs Review</div><div class="lm-val"><span class="badge badge-amber">${reviewCount} entr${reviewCount === 1 ? 'y' : 'ies'}</span></div></div>` : ''}
-    <div class="log-meta-item"><div class="lm-label">Created</div><div class="lm-val">${formatDate(log.createdAt)}</div></div>
-  `;
-
-  const aiEl = document.getElementById('ld-ai-notes');
-  if (log.aiNotes) {
-    aiEl.innerHTML = `<strong>AI Notes</strong>${esc(log.aiNotes)}`;
-    aiEl.style.display = 'block';
-  } else {
-    aiEl.style.display = 'none';
-  }
-
-  const tbody = document.getElementById('ld-workers-body');
-  tbody.innerHTML = '';
-  (log.workers || []).forEach(w => {
-    appendWorkerRow(tbody, { name: w.name, start_time: w.startTime, end_time: w.endTime, hours: w.hours, needs_review: w.needsReview });
-  });
-  updateWorkerSummary('ld-workers-body', 'ld-summary');
-  document.getElementById('ld-save-success').style.display = 'none';
-
-  showView('log-detail');
-}
-
-function toggleLogPhoto() {
-  const panel = document.getElementById('ld-photo-panel');
-  const btn = document.getElementById('ld-view-photo-btn');
-  const isHidden = panel.style.display === 'none';
-  panel.style.display = isHidden ? 'block' : 'none';
-  btn.innerHTML = isHidden
-    ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg> Hide Photo`
-    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> View Photo`;
-  if (isHidden) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-function saveLogEdits() {
-  const logs = getLogs();
-  const idx = logs.findIndex(l => l.id === currentLogId);
-  if (idx === -1) return;
-
-  logs[idx].workers = getWorkersFromBody('ld-workers-body');
-  saveLogs(logs);
-
-  const ok = document.getElementById('ld-save-success');
-  ok.style.display = 'block';
-  setTimeout(() => ok.style.display = 'none', 2500);
-}
-
-function deleteLog() {
-  if (!confirm('Delete this log? This cannot be undone.')) return;
-  let logs = getLogs();
-  logs = logs.filter(l => l.id !== currentLogId);
-  saveLogs(logs);
-  showProjectDetail(currentProjectId);
-}
-
-// ══════════════════════════════════════════════════════
-// EXPORT CSV
-// ══════════════════════════════════════════════════════
-
-function exportCSV() {
-  const logs = getLogs().filter(l => l.projectId === currentProjectId);
-  if (logs.length === 0) { alert('No logs to export.'); return; }
-
-  const rows = [['Log Date','Foreman','Site','Worker Name','Start Time','End Time','Hours','Needs Review']];
-  logs.forEach(l => {
-    (l.workers||[]).forEach(w => {
-      rows.push([l.date||'', l.foreman||'', l.site||'', w.name||'', w.startTime||'', w.endTime||'', w.hours||'', w.needsReview ? 'Yes':'No']);
-    });
-  });
-
-  const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  const projects = getProjects();
-  const p = projects.find(x => x.id === currentProjectId);
-  a.download = `${(p?.name||'project').replace(/\s+/g,'_')}_labor_logs.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-// ══════════════════════════════════════════════════════
-// Helpers
-// ══════════════════════════════════════════════════════
-
-function esc(str) {
-  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function statusBadge(status) {
-  const map = { 'Active':'badge-blue', 'On Hold':'badge-gray', 'Completed':'badge-green' };
-  return `<span class="badge ${map[status]||'badge-gray'}">${esc(status||'—')}</span>`;
-}
-
-function legibilityBadge(leg) {
-  const l = (leg||'').toLowerCase();
-  if (l === 'good')    return `<span class="badge badge-green">Good</span>`;
-  if (l === 'partial') return `<span class="badge badge-amber">Partial</span>`;
-  if (l === 'poor')    return `<span class="badge badge-red">Poor</span>`;
-  return `<span class="badge badge-gray">${esc(leg||'—')}</span>`;
-}
-
-function formatDate(iso) {
-  if (!iso) return '—';
-  try { return new Date(iso).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric'}); }
-  catch { return iso; }
-}
-
+// ── Helpers ───────────────────────────────────────────────
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function statusBadge(s) { const m={'Active':'badge-blue','On Hold':'badge-gray','Completed':'badge-green'}; return `<span class="badge ${m[s]||'badge-gray'}">${esc(s||'&#8212;')}</span>`; }
+function legibilityBadge(l) { const v=(l||'').toLowerCase(); if(v==='good') return '<span class="badge badge-green">Good</span>'; if(v==='partial') return '<span class="badge badge-amber">Partial</span>'; if(v==='poor') return '<span class="badge badge-red">Poor</span>'; return `<span class="badge badge-gray">${esc(l||'&#8212;')}</span>`; }
+function formatDate(iso) { if(!iso) return '&#8212;'; try { return new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); } catch { return iso; } }
 function showToast(msg) {
   const t = document.createElement('div');
   t.textContent = msg;
-  Object.assign(t.style, {
-    position:'fixed', bottom:'24px', right:'24px', background:'#0F172A', color:'#fff',
-    padding:'10px 18px', borderRadius:'8px', fontSize:'.85rem', fontWeight:'600',
-    zIndex:'9999', boxShadow:'0 4px 16px rgba(0,0,0,.25)', opacity:'0', transition:'opacity .2s'
-  });
+  Object.assign(t.style,{position:'fixed',bottom:'24px',right:'24px',background:'#0F172A',color:'#fff',padding:'10px 18px',borderRadius:'8px',fontSize:'.85rem',fontWeight:'600',zIndex:'9999',boxShadow:'0 4px 16px rgba(0,0,0,.25)',opacity:'0',transition:'opacity .2s'});
   document.body.appendChild(t);
-  requestAnimationFrame(() => t.style.opacity = '1');
-  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 2200);
+  requestAnimationFrame(()=>t.style.opacity='1');
+  setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300);},2800);
 }
 
-// ══════════════════════════════════════════════════════
-// Boot
-// ══════════════════════════════════════════════════════
-
-document.addEventListener('DOMContentLoaded', () => {
-  renderProjects();
-  showView('projects');
-});
+boot();
 </script>
 </body>
 </html>
