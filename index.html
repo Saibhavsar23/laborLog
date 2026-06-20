@@ -1,0 +1,1245 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Field Labor Logs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --c-bg:       #F8FAFC;
+    --c-surface:  #FFFFFF;
+    --c-border:   #E2E8F0;
+    --c-text:     #1E293B;
+    --c-muted:    #64748B;
+    --c-blue:     #2563EB;
+    --c-blue-lt:  #EFF6FF;
+    --c-blue-dk:  #1D4ED8;
+    --c-header:   #0F172A;
+    --c-amber:    #F59E0B;
+    --c-amber-lt: #FEF3C7;
+    --c-green:    #16A34A;
+    --c-green-lt: #DCFCE7;
+    --c-red:      #DC2626;
+    --c-red-lt:   #FEE2E2;
+    --c-gray-lt:  #F1F5F9;
+    --radius:     8px;
+    --shadow:     0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+    --shadow-md:  0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.05);
+  }
+
+  html, body {
+    font-family: 'Inter', system-ui, sans-serif;
+    background: var(--c-bg);
+    color: var(--c-text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── HEADER ────────────────────────────────── */
+  #app-header {
+    background: var(--c-header);
+    color: #fff;
+    padding: 0 20px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    border-bottom: 2px solid var(--c-blue);
+  }
+  #app-header .logo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+  }
+  #app-header .logo-icon {
+    width: 28px;
+    height: 28px;
+    background: var(--c-blue);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+  #app-header .logo-text {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    white-space: nowrap;
+  }
+  #breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #94A3B8;
+    font-size: 13px;
+    font-weight: 500;
+    flex: 1;
+    min-width: 0;
+  }
+  #breadcrumb .sep { color: #475569; }
+  #breadcrumb .crumb {
+    color: #94A3B8;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 160px;
+  }
+  #breadcrumb .crumb.active { color: #E2E8F0; cursor: default; }
+  #breadcrumb .crumb:not(.active):hover { color: #CBD5E1; }
+
+  /* ── LAYOUT ────────────────────────────────── */
+  #main { max-width: 960px; margin: 0 auto; padding: 24px 20px 80px; }
+
+  .view { display: none; }
+  .view.active { display: block; }
+
+  /* ── TYPOGRAPHY ────────────────────────────── */
+  .page-title {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--c-text);
+    margin-bottom: 4px;
+  }
+  .page-sub {
+    color: var(--c-muted);
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+  h3 { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
+
+  /* ── BUTTONS ────────────────────────────────── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 16px;
+    height: 40px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: background .15s, opacity .15s, transform .08s;
+    white-space: nowrap;
+    text-decoration: none;
+    font-family: inherit;
+    line-height: 1;
+  }
+  .btn:active { transform: scale(.98); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+  .btn-primary { background: var(--c-blue); color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: var(--c-blue-dk); }
+  .btn-secondary { background: var(--c-surface); color: var(--c-text); border: 1px solid var(--c-border); }
+  .btn-secondary:hover:not(:disabled) { background: var(--c-gray-lt); }
+  .btn-danger { background: var(--c-red-lt); color: var(--c-red); }
+  .btn-danger:hover:not(:disabled) { background: #FECACA; }
+  .btn-ghost { background: transparent; color: var(--c-blue); padding: 0 8px; }
+  .btn-ghost:hover { background: var(--c-blue-lt); }
+  .btn-sm { height: 32px; padding: 0 12px; font-size: 12px; }
+  .btn-icon { width: 32px; height: 32px; padding: 0; justify-content: center; border-radius: 6px; }
+
+  /* ── BADGES ────────────────────────────────── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 9px;
+    border-radius: 99px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .02em;
+    white-space: nowrap;
+  }
+  .badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+  .badge-active  { background: var(--c-blue-lt); color: var(--c-blue-dk); }
+  .badge-active::before { background: var(--c-blue); }
+  .badge-onhold  { background: #F1F5F9; color: #475569; }
+  .badge-onhold::before { background: #94A3B8; }
+  .badge-completed { background: var(--c-green-lt); color: #15803D; }
+  .badge-completed::before { background: var(--c-green); }
+  .badge-good   { background: var(--c-green-lt); color: #15803D; }
+  .badge-good::before { background: var(--c-green); }
+  .badge-partial { background: var(--c-amber-lt); color: #92400E; }
+  .badge-partial::before { background: var(--c-amber); }
+  .badge-poor   { background: var(--c-red-lt); color: #991B1B; }
+  .badge-poor::before { background: var(--c-red); }
+
+  /* ── CHIPS / STATS ────────────────────────── */
+  .chip-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+  .chip {
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    padding: 10px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 110px;
+    box-shadow: var(--shadow);
+  }
+  .chip-val { font-size: 22px; font-weight: 800; letter-spacing: -0.04em; color: var(--c-text); }
+  .chip-label { font-size: 11px; font-weight: 600; color: var(--c-muted); text-transform: uppercase; letter-spacing: .06em; }
+  .chip.chip-alert .chip-val { color: var(--c-amber); }
+
+  /* ── CARDS ────────────────────────────────── */
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+  .card {
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    padding: 16px;
+    cursor: pointer;
+    box-shadow: var(--shadow);
+    transition: box-shadow .15s, transform .15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--c-blue);
+    opacity: 0;
+    transition: opacity .15s;
+  }
+  .card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+  .card:hover::before { opacity: 1; }
+  .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+  .card-name { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; }
+  .card-client { color: var(--c-muted); font-size: 12px; margin-bottom: 10px; }
+  .card-meta { display: flex; gap: 16px; font-size: 12px; color: var(--c-muted); border-top: 1px solid var(--c-border); padding-top: 10px; margin-top: 10px; }
+  .card-meta span strong { color: var(--c-text); font-weight: 600; }
+
+  /* ── FORMS ────────────────────────────────── */
+  .form-panel {
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow);
+  }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 12px; font-weight: 600; color: var(--c-muted); text-transform: uppercase; letter-spacing: .05em; }
+  input[type="text"], input[type="date"], select, textarea {
+    height: 40px;
+    border: 1px solid var(--c-border);
+    border-radius: 6px;
+    padding: 0 12px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--c-text);
+    background: var(--c-bg);
+    transition: border-color .15s, box-shadow .15s;
+    width: 100%;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none;
+    border-color: var(--c-blue);
+    box-shadow: 0 0 0 3px rgba(37,99,235,.12);
+    background: #fff;
+  }
+  textarea { height: auto; padding: 10px 12px; resize: vertical; line-height: 1.5; }
+  .checkbox-group { flex-direction: row; align-items: center; gap: 8px; height: 40px; }
+  .checkbox-group input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--c-blue); cursor: pointer; }
+  .checkbox-group label { text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--c-text); font-weight: 500; cursor: pointer; }
+  .form-actions { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
+
+  /* ── TABLES ────────────────────────────────── */
+  .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--c-border); }
+  table { width: 100%; border-collapse: collapse; background: var(--c-surface); }
+  thead tr { background: #F8FAFC; border-bottom: 1px solid var(--c-border); }
+  th {
+    padding: 10px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--c-muted);
+    text-align: left;
+    white-space: nowrap;
+  }
+  td { padding: 10px 12px; border-bottom: 1px solid #F1F5F9; font-size: 13px; vertical-align: middle; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--c-gray-lt); }
+  tbody tr.needs-review td { background: var(--c-amber-lt); }
+  tbody tr.needs-review:hover td { background: #FDE68A; }
+  tr.clickable { cursor: pointer; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+  .status-dot.ok { background: var(--c-green); }
+  .status-dot.warn { background: var(--c-amber); }
+
+  /* worker table editable cells */
+  .worker-table input[type="text"], .worker-table input[type="number"] {
+    height: 32px;
+    font-size: 13px;
+    min-width: 80px;
+    max-width: 140px;
+    padding: 0 8px;
+  }
+
+  /* ── UPLOAD AREA ────────────────────────────── */
+  .upload-box {
+    border: 2px dashed var(--c-border);
+    border-radius: var(--radius);
+    background: var(--c-gray-lt);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 32px 20px;
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+    position: relative;
+  }
+  .upload-box:hover, .upload-box.drag-over { border-color: var(--c-blue); background: var(--c-blue-lt); }
+  .upload-box input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .upload-icon { font-size: 36px; line-height: 1; }
+  .upload-box p { font-size: 13px; color: var(--c-muted); text-align: center; }
+  .upload-box strong { color: var(--c-blue); }
+  #img-preview { max-width: 100%; max-height: 320px; border-radius: var(--radius); border: 1px solid var(--c-border); display: none; margin: 12px auto 0; display: none; }
+  .key-row { display: flex; gap: 8px; align-items: flex-end; }
+  .key-row .form-group { flex: 1; }
+  .key-row input { font-family: monospace; font-size: 13px; }
+
+  /* ── SPINNER ────────────────────────────────── */
+  .spinner-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 24px; }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--c-border);
+    border-top-color: var(--c-blue);
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spinner-label { font-size: 13px; color: var(--c-muted); font-weight: 500; }
+
+  /* ── ALERT ────────────────────────────────── */
+  .alert {
+    padding: 12px 14px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    margin-bottom: 14px;
+    border: 1px solid transparent;
+  }
+  .alert-error { background: var(--c-red-lt); color: #991B1B; border-color: #FECACA; }
+  .alert-success { background: var(--c-green-lt); color: #15803D; border-color: #BBF7D0; }
+
+  /* ── SECTION DIVIDER ────────────────────────── */
+  .section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    gap: 8px;
+  }
+  .section-head h3 { margin-bottom: 0; }
+
+  /* ── BACK LINK ────────────────────────────────── */
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--c-blue);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 16px;
+    text-decoration: none;
+    background: none;
+    border: none;
+    font-family: inherit;
+    padding: 0;
+  }
+  .back-link:hover { text-decoration: underline; }
+
+  /* ── EMPTY STATE ────────────────────────────── */
+  .empty {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--c-muted);
+  }
+  .empty-icon { font-size: 40px; margin-bottom: 10px; }
+  .empty h3 { font-size: 15px; font-weight: 700; color: var(--c-text); margin-bottom: 4px; }
+  .empty p { font-size: 13px; }
+
+  /* ── SUMMARY ROW ────────────────────────────── */
+  .summary-row {
+    display: flex;
+    gap: 20px;
+    font-size: 13px;
+    color: var(--c-muted);
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .summary-row strong { color: var(--c-text); }
+
+  /* ── META LIST ────────────────────────────── */
+  .meta-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+  .meta-item { display: flex; gap: 8px; font-size: 13px; }
+  .meta-key { color: var(--c-muted); font-weight: 600; min-width: 90px; flex-shrink: 0; }
+
+  /* ── NOTES ────────────────────────────────── */
+  .notes-box {
+    background: var(--c-gray-lt);
+    border: 1px solid var(--c-border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--c-muted);
+    font-style: italic;
+    min-height: 60px;
+    margin-bottom: 16px;
+    white-space: pre-wrap;
+  }
+
+  /* ── RESPONSIVE ────────────────────────────── */
+  @media (max-width: 600px) {
+    #main { padding: 16px 12px 80px; }
+    .form-actions { flex-direction: column; }
+    .form-actions .btn { width: 100%; justify-content: center; }
+    .chip-row { gap: 8px; }
+    .chip { min-width: 90px; }
+  }
+
+  /* ── UTILITY ────────────────────────────────── */
+  .hidden { display: none !important; }
+  .flex-gap { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .text-muted { color: var(--c-muted); }
+  .mt8 { margin-top: 8px; }
+  .mt16 { margin-top: 16px; }
+  .mb12 { margin-bottom: 12px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════ HEADER ═══════════════════════ -->
+<header id="app-header">
+  <a class="logo" onclick="showProjects()">
+    <div class="logo-icon">📋</div>
+    <span class="logo-text">Field Labor Logs</span>
+  </a>
+  <div id="breadcrumb"></div>
+</header>
+
+<main id="main">
+
+  <!-- ════════ 1. PROJECTS VIEW ════════ -->
+  <div id="view-projects" class="view active">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+      <div>
+        <div class="page-title">Projects</div>
+        <div class="page-sub">Tap a project to view logs and hours.</div>
+      </div>
+      <button class="btn btn-primary" onclick="toggleNewProjectForm()">＋ New project</button>
+    </div>
+
+    <!-- inline new project form -->
+    <div id="new-project-form" class="form-panel hidden">
+      <h3>New project</h3>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="np-name">Project name <span style="color:var(--c-red)">*</span></label>
+          <input type="text" id="np-name" placeholder="e.g. Riverside Mixed Use">
+        </div>
+        <div class="form-group">
+          <label for="np-client">Client name</label>
+          <input type="text" id="np-client" placeholder="e.g. Acme Development">
+        </div>
+        <div class="form-group full">
+          <label for="np-address">Site address</label>
+          <input type="text" id="np-address" placeholder="123 Main St, City, ST">
+        </div>
+        <div class="form-group">
+          <label for="np-status">Status</label>
+          <select id="np-status">
+            <option value="Active">Active</option>
+            <option value="On Hold">On Hold</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </div>
+      </div>
+      <div id="np-error" class="alert alert-error hidden"></div>
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="createProject()">Create project</button>
+        <button class="btn btn-secondary" onclick="toggleNewProjectForm(false)">Cancel</button>
+      </div>
+    </div>
+
+    <div id="project-cards" class="card-grid"></div>
+    <div id="projects-empty" class="empty hidden">
+      <div class="empty-icon">🏗️</div>
+      <h3>No projects yet</h3>
+      <p>Create your first project to start logging field labor.</p>
+    </div>
+  </div>
+
+  <!-- ════════ 2. PROJECT DETAIL ════════ -->
+  <div id="view-project" class="view">
+    <button class="back-link" onclick="showProjects()">← All projects</button>
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:8px;">
+      <div>
+        <div class="flex-gap mb12" style="margin-bottom:6px;">
+          <div class="page-title" id="pd-name"></div>
+          <div id="pd-status-badge"></div>
+        </div>
+        <div class="text-muted" id="pd-client" style="font-size:13px;"></div>
+        <div class="text-muted" id="pd-address" style="font-size:12px;margin-top:2px;"></div>
+      </div>
+      <div class="flex-gap">
+        <button class="btn btn-secondary btn-sm" onclick="exportProjectCSV()">⬇ Export CSV</button>
+        <button class="btn btn-primary" onclick="showUpload()">📷 Upload new log</button>
+      </div>
+    </div>
+
+    <div class="chip-row" id="pd-chips"></div>
+
+    <div class="section-head">
+      <h3>Labor logs</h3>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Foreman</th>
+            <th>Site</th>
+            <th>Workers</th>
+            <th>Hours</th>
+            <th>Legibility</th>
+            <th>Signed</th>
+          </tr>
+        </thead>
+        <tbody id="pd-logs-body"></tbody>
+      </table>
+    </div>
+    <div id="pd-logs-empty" class="empty hidden">
+      <div class="empty-icon">📄</div>
+      <h3>No logs yet</h3>
+      <p>Upload a photo of a paper log to get started.</p>
+    </div>
+  </div>
+
+  <!-- ════════ 3. UPLOAD & EXTRACT VIEW ════════ -->
+  <div id="view-upload" class="view">
+    <button class="back-link" id="upload-back-link" onclick="showProject()">← Back to project</button>
+    <div class="page-title" id="upload-project-name"></div>
+    <div class="page-sub">Upload a photo of a paper labor log for AI extraction.</div>
+
+    <div class="form-panel">
+      <h3>1. Select photo</h3>
+      <div class="upload-box" id="upload-box">
+        <input type="file" id="file-input" accept="image/*" capture="environment"
+               onchange="handleFileSelect(event)">
+        <div class="upload-icon">📷</div>
+        <p><strong>Tap to take a photo</strong> or select from library</p>
+        <p>Supports JPG, PNG, HEIC, WebP</p>
+      </div>
+      <img id="img-preview" alt="Selected log photo">
+    </div>
+
+    <div class="form-panel">
+      <h3>2. AI extraction key</h3>
+      <div class="key-row">
+        <div class="form-group">
+          <label for="api-key-input">Google AI Studio API key</label>
+          <input type="text" id="api-key-input" placeholder="AIza…" autocomplete="off" spellcheck="false"
+                 oninput="updateExtractButton()">
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="saveApiKey()" style="margin-bottom:1px;">Save key</button>
+      </div>
+      <div id="key-saved-msg" class="hidden" style="font-size:12px;color:var(--c-green);margin-top:4px;">✓ Key saved to this device</div>
+    </div>
+
+    <div id="extract-alert" class="alert alert-error hidden"></div>
+    <div id="extract-spinner" class="spinner-wrap hidden">
+      <div class="spinner"></div>
+      <span class="spinner-label">Analyzing photo…</span>
+    </div>
+
+    <button class="btn btn-primary" id="extract-btn" onclick="extractData()" disabled
+            style="width:100%;justify-content:center;height:48px;font-size:15px;margin-bottom:20px;">
+      🔍 Extract labor data
+    </button>
+
+    <!-- ── REVIEW FORM (shown after extraction) ── -->
+    <div id="review-section" class="hidden">
+      <div class="form-panel">
+        <h3>3. Review &amp; edit extracted data</h3>
+        <div id="legibility-row" style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+          <span style="font-size:12px;font-weight:600;color:var(--c-muted);">LEGIBILITY</span>
+          <div id="review-legibility"></div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="rv-date">Log date</label>
+            <input type="date" id="rv-date">
+          </div>
+          <div class="form-group">
+            <label for="rv-foreman">Foreman</label>
+            <input type="text" id="rv-foreman" placeholder="Name">
+          </div>
+          <div class="form-group full">
+            <label for="rv-site">Site / location</label>
+            <input type="text" id="rv-site" placeholder="Location or description">
+          </div>
+          <div class="form-group checkbox-group">
+            <input type="checkbox" id="rv-signed">
+            <label for="rv-signed">Log sheet is signed</label>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-panel">
+        <div class="section-head">
+          <h3>Worker entries</h3>
+          <button class="btn btn-secondary btn-sm" onclick="addWorkerRow()">＋ Add row</button>
+        </div>
+        <div class="table-wrap">
+          <table class="worker-table">
+            <thead>
+              <tr>
+                <th style="width:28px;"></th>
+                <th>Worker name</th>
+                <th>Start</th>
+                <th>End</th>
+                <th>Hours</th>
+                <th style="width:36px;"></th>
+              </tr>
+            </thead>
+            <tbody id="rv-workers-body"></tbody>
+          </table>
+        </div>
+        <div class="summary-row" id="rv-summary"></div>
+      </div>
+
+      <div class="form-panel">
+        <h3>AI notes</h3>
+        <div class="notes-box" id="rv-ai-notes">—</div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" onclick="saveLog()">Save log</button>
+        <button class="btn btn-secondary" onclick="showProject()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ 4. LOG DETAIL VIEW ════════ -->
+  <div id="view-log" class="view">
+    <button class="back-link" onclick="showProject()">← Back to project</button>
+    <div class="page-title" id="ld-title">Log detail</div>
+    <div class="page-sub" id="ld-sub"></div>
+
+    <div class="form-panel">
+      <div class="meta-list" id="ld-meta"></div>
+      <h3 style="margin-top:8px;">AI notes</h3>
+      <div class="notes-box" id="ld-ai-notes">—</div>
+    </div>
+
+    <div class="form-panel">
+      <div class="section-head">
+        <h3>Worker entries</h3>
+        <button class="btn btn-secondary btn-sm" onclick="addLogDetailWorkerRow()">＋ Add row</button>
+      </div>
+      <div class="table-wrap">
+        <table class="worker-table">
+          <thead>
+            <tr>
+              <th style="width:28px;"></th>
+              <th>Worker name</th>
+              <th>Start</th>
+              <th>End</th>
+              <th>Hours</th>
+              <th style="width:36px;"></th>
+            </tr>
+          </thead>
+          <tbody id="ld-workers-body"></tbody>
+        </table>
+      </div>
+      <div class="summary-row" id="ld-summary"></div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-primary" onclick="saveLogChanges()">Save changes</button>
+      <button class="btn btn-danger" onclick="deleteLog()">Delete log</button>
+      <button class="btn btn-secondary" onclick="showProject()">Cancel</button>
+    </div>
+  </div>
+
+</main>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  STORAGE HELPERS
+// ═══════════════════════════════════════════════════════════
+const KEY_PROJECTS = 'fll_projects';
+const KEY_LOGS     = 'fll_logs';
+const KEY_APIKEY   = 'fll_api_key';
+
+function getProjects() { return JSON.parse(localStorage.getItem(KEY_PROJECTS) || '[]'); }
+function getLogs()     { return JSON.parse(localStorage.getItem(KEY_LOGS) || '[]'); }
+function saveProjects(p) { localStorage.setItem(KEY_PROJECTS, JSON.stringify(p)); }
+function saveLogs(l)     { localStorage.setItem(KEY_LOGS, JSON.stringify(l)); }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+// ═══════════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════════
+let currentProjectId = null;
+let currentLogId     = null;
+let selectedFile     = null;
+
+// ═══════════════════════════════════════════════════════════
+//  NAVIGATION / VIEW MANAGEMENT
+// ═══════════════════════════════════════════════════════════
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+function setBreadcrumb(parts) {
+  const bc = document.getElementById('breadcrumb');
+  bc.innerHTML = '';
+  parts.forEach((p, i) => {
+    if (i > 0) bc.insertAdjacentHTML('beforeend', '<span class="sep">›</span>');
+    if (p.action) {
+      bc.insertAdjacentHTML('beforeend',
+        `<span class="crumb${i===parts.length-1?' active':''}" onclick="${p.action}">${p.label}</span>`);
+    } else {
+      bc.insertAdjacentHTML('beforeend',
+        `<span class="crumb${i===parts.length-1?' active':''}">${p.label}</span>`);
+    }
+  });
+}
+
+function showProjects() {
+  currentProjectId = null;
+  currentLogId = null;
+  renderProjects();
+  showView('view-projects');
+  setBreadcrumb([{ label: 'Projects' }]);
+}
+
+function showProject(projectId) {
+  if (projectId) currentProjectId = projectId;
+  renderProjectDetail();
+  showView('view-project');
+  const proj = getProjects().find(p => p.id === currentProjectId);
+  setBreadcrumb([
+    { label: 'Projects', action: 'showProjects()' },
+    { label: proj ? proj.name : 'Project' }
+  ]);
+}
+
+function showUpload() {
+  resetUploadView();
+  const proj = getProjects().find(p => p.id === currentProjectId);
+  document.getElementById('upload-project-name').textContent = proj ? proj.name : '';
+  showView('view-upload');
+  const apiKey = localStorage.getItem(KEY_APIKEY) || '';
+  document.getElementById('api-key-input').value = apiKey;
+  if (apiKey) document.getElementById('key-saved-msg').classList.remove('hidden');
+  updateExtractButton();
+  setBreadcrumb([
+    { label: 'Projects', action: 'showProjects()' },
+    { label: proj ? proj.name : 'Project', action: 'showProject()' },
+    { label: 'Upload log' }
+  ]);
+}
+
+function showLogDetail(logId) {
+  currentLogId = logId;
+  renderLogDetail();
+  showView('view-log');
+  const proj = getProjects().find(p => p.id === currentProjectId);
+  const log = getLogs().find(l => l.id === logId);
+  setBreadcrumb([
+    { label: 'Projects', action: 'showProjects()' },
+    { label: proj ? proj.name : 'Project', action: 'showProject()' },
+    { label: log ? (log.date || 'Log') : 'Log' }
+  ]);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  BADGE HELPERS
+// ═══════════════════════════════════════════════════════════
+function statusBadge(status) {
+  const map = { 'Active': 'badge-active', 'On Hold': 'badge-onhold', 'Completed': 'badge-completed' };
+  return `<span class="badge ${map[status]||'badge-onhold'}">${status}</span>`;
+}
+function legBadge(leg) {
+  const map = { 'good': 'badge-good', 'partial': 'badge-partial', 'poor': 'badge-poor' };
+  const labels = { 'good': 'Good', 'partial': 'Partial', 'poor': 'Poor' };
+  return `<span class="badge ${map[leg]||'badge-partial'}">${labels[leg]||leg||'—'}</span>`;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PROJECTS VIEW
+// ═══════════════════════════════════════════════════════════
+function renderProjects() {
+  const projects = getProjects();
+  const logs = getLogs();
+  const container = document.getElementById('project-cards');
+  const empty = document.getElementById('projects-empty');
+  container.innerHTML = '';
+  if (!projects.length) { empty.classList.remove('hidden'); return; }
+  empty.classList.add('hidden');
+  projects.slice().reverse().forEach(proj => {
+    const projLogs = logs.filter(l => l.projectId === proj.id);
+    const totalHrs = projLogs.reduce((s, l) =>
+      s + (l.workers||[]).reduce((ws, w) => ws + (parseFloat(w.hours)||0), 0), 0);
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.onclick = () => showProject(proj.id);
+    card.innerHTML = `
+      <div class="card-header">
+        <div class="card-name">${esc(proj.name)}</div>
+        ${statusBadge(proj.status)}
+      </div>
+      <div class="card-client">${esc(proj.client || 'No client')}</div>
+      ${proj.address ? `<div style="font-size:11px;color:var(--c-muted);margin-bottom:8px;">${esc(proj.address)}</div>` : ''}
+      <div class="card-meta">
+        <span><strong>${projLogs.length}</strong> logs</span>
+        <span><strong>${totalHrs % 1 === 0 ? totalHrs : totalHrs.toFixed(1)}</strong> hrs</span>
+      </div>`;
+    container.appendChild(card);
+  });
+}
+
+function toggleNewProjectForm(forceShow) {
+  const form = document.getElementById('new-project-form');
+  const show = forceShow !== undefined ? forceShow : form.classList.contains('hidden');
+  if (show) {
+    form.classList.remove('hidden');
+    document.getElementById('np-name').value = '';
+    document.getElementById('np-client').value = '';
+    document.getElementById('np-address').value = '';
+    document.getElementById('np-status').value = 'Active';
+    document.getElementById('np-error').classList.add('hidden');
+    document.getElementById('np-name').focus();
+  } else {
+    form.classList.add('hidden');
+  }
+}
+
+function createProject() {
+  const name = document.getElementById('np-name').value.trim();
+  const errEl = document.getElementById('np-error');
+  if (!name) { errEl.textContent = 'Project name is required.'; errEl.classList.remove('hidden'); return; }
+  errEl.classList.add('hidden');
+  const proj = {
+    id: uid(),
+    name,
+    client: document.getElementById('np-client').value.trim(),
+    address: document.getElementById('np-address').value.trim(),
+    status: document.getElementById('np-status').value,
+    createdAt: new Date().toISOString()
+  };
+  const projects = getProjects();
+  projects.push(proj);
+  saveProjects(projects);
+  toggleNewProjectForm(false);
+  renderProjects();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  PROJECT DETAIL
+// ═══════════════════════════════════════════════════════════
+function renderProjectDetail() {
+  const proj = getProjects().find(p => p.id === currentProjectId);
+  if (!proj) return showProjects();
+  document.getElementById('pd-name').textContent = proj.name;
+  document.getElementById('pd-status-badge').innerHTML = statusBadge(proj.status);
+  document.getElementById('pd-client').textContent = proj.client || '';
+  document.getElementById('pd-address').textContent = proj.address || '';
+
+  const logs = getLogs().filter(l => l.projectId === currentProjectId);
+  const totalHrs = logs.reduce((s, l) =>
+    s + (l.workers||[]).reduce((ws, w) => ws + (parseFloat(w.hours)||0), 0), 0);
+  const needsReview = logs.reduce((s, l) =>
+    s + (l.workers||[]).filter(w => w.needsReview).length, 0);
+
+  document.getElementById('pd-chips').innerHTML = `
+    <div class="chip"><div class="chip-val">${logs.length}</div><div class="chip-label">Total logs</div></div>
+    <div class="chip"><div class="chip-val">${totalHrs % 1 === 0 ? totalHrs : totalHrs.toFixed(1)}</div><div class="chip-label">Total hours</div></div>
+    <div class="chip ${needsReview > 0 ? 'chip-alert' : ''}">
+      <div class="chip-val">${needsReview}</div>
+      <div class="chip-label">Need review</div>
+    </div>`;
+
+  const tbody = document.getElementById('pd-logs-body');
+  const emptyEl = document.getElementById('pd-logs-empty');
+  tbody.innerHTML = '';
+  if (!logs.length) {
+    emptyEl.classList.remove('hidden');
+    document.querySelector('#pd-logs-body').closest('.table-wrap').style.display = 'none';
+    return;
+  }
+  emptyEl.classList.add('hidden');
+  document.querySelector('#pd-logs-body').closest('.table-wrap').style.display = '';
+  logs.slice().sort((a, b) => (b.date||'').localeCompare(a.date||'')).forEach(log => {
+    const workers = log.workers || [];
+    const hrs = workers.reduce((s, w) => s + (parseFloat(w.hours)||0), 0);
+    const tr = document.createElement('tr');
+    tr.className = 'clickable';
+    tr.onclick = () => showLogDetail(log.id);
+    tr.innerHTML = `
+      <td>${formatDate(log.date)}</td>
+      <td>${esc(log.foreman||'—')}</td>
+      <td>${esc(log.site||'—')}</td>
+      <td>${workers.length}</td>
+      <td>${hrs % 1 === 0 ? hrs : hrs.toFixed(1)}</td>
+      <td>${legBadge(log.legibility)}</td>
+      <td>${log.signed ? '✓' : '—'}</td>`;
+    tbody.appendChild(tr);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  EXPORT CSV
+// ═══════════════════════════════════════════════════════════
+function exportProjectCSV() {
+  const logs = getLogs().filter(l => l.projectId === currentProjectId);
+  const rows = [['Log Date','Foreman','Site','Worker Name','Start Time','End Time','Hours','Needs Review']];
+  logs.forEach(log => {
+    (log.workers||[]).forEach(w => {
+      rows.push([log.date||'',log.foreman||'',log.site||'',w.name||'',
+        w.startTime||'',w.endTime||'',w.hours||'',w.needsReview?'Yes':'No']);
+    });
+  });
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const proj = getProjects().find(p => p.id === currentProjectId);
+  const fname = `${(proj?.name||'project').replace(/[^a-z0-9]/gi,'_')}_labor_logs.csv`;
+  downloadText(csv, fname, 'text/csv');
+}
+
+function downloadText(text, filename, type) {
+  const blob = new Blob([text], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ═══════════════════════════════════════════════════════════
+//  UPLOAD VIEW
+// ═══════════════════════════════════════════════════════════
+function resetUploadView() {
+  selectedFile = null;
+  document.getElementById('file-input').value = '';
+  document.getElementById('img-preview').style.display = 'none';
+  document.getElementById('review-section').classList.add('hidden');
+  document.getElementById('extract-alert').classList.add('hidden');
+  document.getElementById('extract-spinner').classList.add('hidden');
+  document.getElementById('rv-workers-body').innerHTML = '';
+  document.getElementById('rv-summary').innerHTML = '';
+  document.getElementById('key-saved-msg').classList.add('hidden');
+}
+
+function handleFileSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  selectedFile = file;
+  const preview = document.getElementById('img-preview');
+  preview.src = URL.createObjectURL(file);
+  preview.style.display = 'block';
+  updateExtractButton();
+}
+
+function updateExtractButton() {
+  const apiKey = document.getElementById('api-key-input').value.trim();
+  document.getElementById('extract-btn').disabled = !(selectedFile && apiKey);
+}
+
+function saveApiKey() {
+  const key = document.getElementById('api-key-input').value.trim();
+  if (!key) return;
+  localStorage.setItem(KEY_APIKEY, key);
+  const msg = document.getElementById('key-saved-msg');
+  msg.classList.remove('hidden');
+  updateExtractButton();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  AI EXTRACTION
+// ═══════════════════════════════════════════════════════════
+async function extractData() {
+  const apiKey = document.getElementById('api-key-input').value.trim();
+  if (!selectedFile || !apiKey) return;
+
+  // Auto-save key
+  localStorage.setItem(KEY_APIKEY, apiKey);
+  document.getElementById('key-saved-msg').classList.remove('hidden');
+
+  const alertEl = document.getElementById('extract-alert');
+  const spinner = document.getElementById('extract-spinner');
+  const btn = document.getElementById('extract-btn');
+  alertEl.classList.add('hidden');
+  spinner.classList.remove('hidden');
+  btn.disabled = true;
+
+  try {
+    const base64 = await fileToBase64(selectedFile);
+    const mimeType = selectedFile.type || 'image/jpeg';
+    const model = 'gemini-2.0-flash';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    const prompt = `You are an expert at reading handwritten and printed paper labor logs from construction sites. Extract all data from the image and return ONLY valid JSON — no markdown, no explanation. Schema: { "date": "string or null", "foreman": "string or null", "site": "string or null", "signed": true or false, "overall_legibility": "good" or "partial" or "poor", "ai_notes": "string", "workers": [ { "name": "string", "start_time": "string or null", "end_time": "string or null", "hours": number or null, "needs_review": true or false } ] }. Set needs_review: true for any row that was unclear or required a guess.`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: prompt },
+            { inline_data: { mime_type: mimeType, data: base64 } }
+          ]
+        }],
+        generationConfig: { temperature: 0 }
+      })
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData?.error?.message || `API error ${response.status}`);
+    }
+
+    const data = await response.json();
+    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const clean = rawText.replace(/```json|```/g, '').trim();
+    const extracted = JSON.parse(clean);
+    populateReviewForm(extracted);
+    document.getElementById('review-section').classList.remove('hidden');
+    document.getElementById('review-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  } catch (err) {
+    alertEl.textContent = '⚠ Extraction failed: ' + err.message;
+    alertEl.classList.remove('hidden');
+  } finally {
+    spinner.classList.add('hidden');
+    btn.disabled = false;
+  }
+}
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+//  REVIEW FORM
+// ═══════════════════════════════════════════════════════════
+function populateReviewForm(extracted) {
+  document.getElementById('rv-date').value = extracted.date || '';
+  document.getElementById('rv-foreman').value = extracted.foreman || '';
+  document.getElementById('rv-site').value = extracted.site || '';
+  document.getElementById('rv-signed').checked = !!extracted.signed;
+  document.getElementById('review-legibility').innerHTML = legBadge(extracted.overall_legibility || 'partial');
+  document.getElementById('rv-ai-notes').textContent = extracted.ai_notes || '—';
+
+  const tbody = document.getElementById('rv-workers-body');
+  tbody.innerHTML = '';
+  (extracted.workers || []).forEach(w => appendWorkerRow('rv', w));
+  updateReviewSummary();
+}
+
+function appendWorkerRow(scope, w = {}) {
+  const tbody = document.getElementById(`${scope}-workers-body`);
+  const rowId = uid();
+  const tr = document.createElement('tr');
+  if (w.needs_review || w.needsReview) tr.classList.add('needs-review');
+  tr.dataset.rowId = rowId;
+  tr.innerHTML = `
+    <td><span class="status-dot ${(w.needs_review||w.needsReview) ? 'warn' : 'ok'}"></span></td>
+    <td><input type="text" value="${esc(w.name||'')}" placeholder="Name" onchange="updateRowReview(this)"></td>
+    <td><input type="text" value="${esc(w.start_time||w.startTime||'')}" placeholder="e.g. 7:00"></td>
+    <td><input type="text" value="${esc(w.end_time||w.endTime||'')}" placeholder="e.g. 15:30"></td>
+    <td><input type="number" value="${w.hours!=null?w.hours:''}" placeholder="hrs" step="0.25" min="0" onchange="${scope==='rv'?'updateReviewSummary()':'updateLogDetailSummary()'}"></td>
+    <td>
+      <button class="btn btn-icon btn-danger" title="Remove row" onclick="removeWorkerRow(this,'${scope}')">✕</button>
+    </td>`;
+  tbody.appendChild(tr);
+}
+
+function addWorkerRow() { appendWorkerRow('rv', {}); updateReviewSummary(); }
+function addLogDetailWorkerRow() { appendWorkerRow('ld', {}); updateLogDetailSummary(); }
+
+function removeWorkerRow(btn, scope) {
+  btn.closest('tr').remove();
+  if (scope === 'rv') updateReviewSummary();
+  else updateLogDetailSummary();
+}
+
+function updateRowReview(input) {
+  // nothing auto-changes review status on name edit — keep existing dot
+}
+
+function updateReviewSummary() {
+  const rows = document.querySelectorAll('#rv-workers-body tr');
+  let totalHrs = 0, needsReview = 0;
+  rows.forEach(tr => {
+    const hrs = parseFloat(tr.querySelectorAll('input')[3]?.value) || 0;
+    totalHrs += hrs;
+    if (tr.classList.contains('needs-review')) needsReview++;
+  });
+  document.getElementById('rv-summary').innerHTML =
+    `<span><strong>${rows.length}</strong> workers</span>
+     <span><strong>${totalHrs % 1 === 0 ? totalHrs : totalHrs.toFixed(1)}</strong> total hours</span>
+     ${needsReview > 0 ? `<span style="color:var(--c-amber)"><strong>${needsReview}</strong> needing review</span>` : ''}`;
+}
+
+function updateLogDetailSummary() {
+  const rows = document.querySelectorAll('#ld-workers-body tr');
+  let totalHrs = 0, needsReview = 0;
+  rows.forEach(tr => {
+    const hrs = parseFloat(tr.querySelectorAll('input')[3]?.value) || 0;
+    totalHrs += hrs;
+    if (tr.classList.contains('needs-review')) needsReview++;
+  });
+  document.getElementById('ld-summary').innerHTML =
+    `<span><strong>${rows.length}</strong> workers</span>
+     <span><strong>${totalHrs % 1 === 0 ? totalHrs : totalHrs.toFixed(1)}</strong> total hours</span>
+     ${needsReview > 0 ? `<span style="color:var(--c-amber)"><strong>${needsReview}</strong> needing review</span>` : ''}`;
+}
+
+// ═══════════════════════════════════════════════════════════
+//  SAVE LOG (from upload/review)
+// ═══════════════════════════════════════════════════════════
+function collectWorkerRows(scope) {
+  const rows = document.querySelectorAll(`#${scope}-workers-body tr`);
+  return Array.from(rows).map(tr => {
+    const inputs = tr.querySelectorAll('input');
+    return {
+      id: uid(),
+      name: inputs[0].value.trim(),
+      startTime: inputs[1].value.trim(),
+      endTime: inputs[2].value.trim(),
+      hours: inputs[3].value !== '' ? parseFloat(inputs[3].value) : null,
+      needsReview: tr.classList.contains('needs-review')
+    };
+  });
+}
+
+function saveLog() {
+  const legEl = document.getElementById('review-legibility').querySelector('.badge');
+  let legibility = 'partial';
+  if (legEl) {
+    if (legEl.classList.contains('badge-good')) legibility = 'good';
+    else if (legEl.classList.contains('badge-poor')) legibility = 'poor';
+  }
+  const log = {
+    id: uid(),
+    projectId: currentProjectId,
+    date: document.getElementById('rv-date').value,
+    foreman: document.getElementById('rv-foreman').value.trim(),
+    site: document.getElementById('rv-site').value.trim(),
+    signed: document.getElementById('rv-signed').checked,
+    legibility,
+    aiNotes: document.getElementById('rv-ai-notes').textContent,
+    createdAt: new Date().toISOString(),
+    workers: collectWorkerRows('rv')
+  };
+  const logs = getLogs();
+  logs.push(log);
+  saveLogs(logs);
+  showProject();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  LOG DETAIL
+// ═══════════════════════════════════════════════════════════
+function renderLogDetail() {
+  const log = getLogs().find(l => l.id === currentLogId);
+  if (!log) return showProject();
+
+  document.getElementById('ld-title').textContent = `Log — ${formatDate(log.date)}`;
+  document.getElementById('ld-sub').textContent = `${log.foreman||'No foreman'} · ${log.site||'No site'}`;
+  document.getElementById('ld-ai-notes').textContent = log.aiNotes || '—';
+
+  document.getElementById('ld-meta').innerHTML = `
+    <div class="meta-item"><span class="meta-key">Date</span><span>${formatDate(log.date)}</span></div>
+    <div class="meta-item"><span class="meta-key">Foreman</span><span>${esc(log.foreman||'—')}</span></div>
+    <div class="meta-item"><span class="meta-key">Site</span><span>${esc(log.site||'—')}</span></div>
+    <div class="meta-item"><span class="meta-key">Legibility</span><span>${legBadge(log.legibility)}</span></div>
+    <div class="meta-item"><span class="meta-key">Signed</span><span>${log.signed ? '✓ Yes' : '— No'}</span></div>`;
+
+  const tbody = document.getElementById('ld-workers-body');
+  tbody.innerHTML = '';
+  (log.workers||[]).forEach(w => appendWorkerRow('ld', {
+    name: w.name, start_time: w.startTime, end_time: w.endTime,
+    hours: w.hours, needs_review: w.needsReview
+  }));
+  updateLogDetailSummary();
+}
+
+function saveLogChanges() {
+  const logs = getLogs();
+  const idx = logs.findIndex(l => l.id === currentLogId);
+  if (idx === -1) return;
+  logs[idx].workers = collectWorkerRows('ld');
+  saveLogs(logs);
+  // Show brief success then go back
+  showProject();
+}
+
+function deleteLog() {
+  if (!confirm('Delete this log? This cannot be undone.')) return;
+  const logs = getLogs().filter(l => l.id !== currentLogId);
+  saveLogs(logs);
+  currentLogId = null;
+  showProject();
+}
+
+// ═══════════════════════════════════════════════════════════
+//  UTILITIES
+// ═══════════════════════════════════════════════════════════
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function formatDate(dateStr) {
+  if (!dateStr) return '—';
+  try {
+    // Parse as local date to avoid timezone shift
+    const [y, m, d] = dateStr.split('-').map(Number);
+    if (!y) return dateStr;
+    return new Date(y, m-1, d).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+  } catch {
+    return dateStr;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════
+showProjects();
+</script>
+</body>
+</html>
