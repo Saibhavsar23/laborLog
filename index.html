@@ -4,46 +4,56 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Field Labor Logs</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+  /* ── Design tokens ── */
+  :root {
+    --ink:        #0F172A;
+    --ink-muted:  #475569;
+    --ink-faint:  #94A3B8;
+    --surface:    #F8FAFC;
+    --panel:      #FFFFFF;
+    --border:     #E2E8F0;
+    --border-mid: #CBD5E1;
+
+    --blue:       #2563EB;
+    --blue-light: #DBEAFE;
+    --blue-dark:  #1D4ED8;
+
+    --green:      #16A34A;
+    --green-light:#DCFCE7;
+    --amber:      #D97706;
+    --amber-light:#FEF3C7;
+    --red:        #DC2626;
+    --red-light:  #FEE2E2;
+
+    --slate-700:  #334155;
+    --slate-800:  #1E293B;
+    --slate-900:  #0F172A;
+
+    --font-sans:  -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    --font-mono:  'SF Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+
+    --radius:     6px;
+    --radius-lg:  10px;
+    --shadow-sm:  0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+    --shadow-md:  0 4px 12px rgba(0,0,0,.1), 0 2px 6px rgba(0,0,0,.06);
+  }
+
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  :root {
-    --c-bg:       #F8FAFC;
-    --c-surface:  #FFFFFF;
-    --c-border:   #E2E8F0;
-    --c-text:     #1E293B;
-    --c-muted:    #64748B;
-    --c-blue:     #2563EB;
-    --c-blue-lt:  #EFF6FF;
-    --c-blue-dk:  #1D4ED8;
-    --c-header:   #0F172A;
-    --c-amber:    #F59E0B;
-    --c-amber-lt: #FEF3C7;
-    --c-green:    #16A34A;
-    --c-green-lt: #DCFCE7;
-    --c-red:      #DC2626;
-    --c-red-lt:   #FEE2E2;
-    --c-gray-lt:  #F1F5F9;
-    --radius:     8px;
-    --shadow:     0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
-    --shadow-md:  0 4px 6px rgba(0,0,0,.07), 0 2px 4px rgba(0,0,0,.05);
-  }
+  html { font-size: 15px; }
 
-  html, body {
-    font-family: 'Inter', system-ui, sans-serif;
-    background: var(--c-bg);
-    color: var(--c-text);
-    min-height: 100vh;
-    font-size: 14px;
+  body {
+    font-family: var(--font-sans);
+    background: var(--surface);
+    color: var(--ink);
     line-height: 1.5;
+    min-height: 100vh;
   }
 
-  /* ── HEADER ────────────────────────────────── */
+  /* ── Header ── */
   #app-header {
-    background: var(--c-header);
+    background: var(--slate-900);
     color: #fff;
     padding: 0 20px;
     height: 56px;
@@ -53,77 +63,87 @@
     position: sticky;
     top: 0;
     z-index: 100;
-    border-bottom: 2px solid var(--c-blue);
+    box-shadow: 0 2px 8px rgba(0,0,0,.25);
   }
-  #app-header .logo {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    text-decoration: none;
-    color: inherit;
-  }
-  #app-header .logo-icon {
-    width: 28px;
-    height: 28px;
-    background: var(--c-blue);
-    border-radius: 6px;
+  #app-header .logo-mark {
+    width: 32px;
+    height: 32px;
+    background: var(--blue);
+    border-radius: var(--radius);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 15px;
     flex-shrink: 0;
   }
-  #app-header .logo-text {
-    font-size: 15px;
+  #app-header .logo-mark svg { width: 18px; height: 18px; }
+  #app-header h1 {
+    font-size: 1rem;
     font-weight: 700;
-    letter-spacing: -0.02em;
-    white-space: nowrap;
+    letter-spacing: .01em;
+    color: #fff;
   }
-  #breadcrumb {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+  #app-header .header-sub {
+    font-size: .75rem;
     color: #94A3B8;
-    font-size: 13px;
-    font-weight: 500;
-    flex: 1;
-    min-width: 0;
+    font-weight: 400;
   }
-  #breadcrumb .sep { color: #475569; }
-  #breadcrumb .crumb {
-    color: #94A3B8;
-    cursor: pointer;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 160px;
+
+  /* ── Main container ── */
+  #app-body {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 24px 16px 60px;
   }
-  #breadcrumb .crumb.active { color: #E2E8F0; cursor: default; }
-  #breadcrumb .crumb:not(.active):hover { color: #CBD5E1; }
 
-  /* ── LAYOUT ────────────────────────────────── */
-  #main { max-width: 960px; margin: 0 auto; padding: 24px 20px 80px; }
-
+  /* ── Views ── */
   .view { display: none; }
   .view.active { display: block; }
 
-  /* ── TYPOGRAPHY ────────────────────────────── */
-  .page-title {
-    font-size: 22px;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    color: var(--c-text);
-    margin-bottom: 4px;
-  }
-  .page-sub {
-    color: var(--c-muted);
-    font-size: 13px;
+  /* ── Breadcrumb / Back ── */
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .85rem;
+    font-weight: 500;
+    color: var(--ink-muted);
+    cursor: pointer;
+    padding: 6px 0;
     margin-bottom: 20px;
+    border: none;
+    background: none;
+    text-decoration: none;
   }
-  h3 { font-size: 15px; font-weight: 700; margin-bottom: 12px; }
+  .back-link:hover { color: var(--blue); }
+  .back-link svg { width: 16px; height: 16px; }
 
-  /* ── BUTTONS ────────────────────────────────── */
+  /* ── Section headers ── */
+  .view-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .view-header-left h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+  .view-header-left .sub {
+    font-size: .85rem;
+    color: var(--ink-muted);
+    margin-top: 2px;
+  }
+  .view-header-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  /* ── Buttons ── */
   .btn {
     display: inline-flex;
     align-items: center;
@@ -131,348 +151,616 @@
     padding: 0 16px;
     height: 40px;
     border-radius: var(--radius);
-    font-size: 13px;
+    font-size: .875rem;
     font-weight: 600;
     cursor: pointer;
-    border: none;
-    transition: background .15s, opacity .15s, transform .08s;
+    border: 1.5px solid transparent;
+    transition: background .15s, border-color .15s, box-shadow .15s;
     white-space: nowrap;
-    text-decoration: none;
-    font-family: inherit;
-    line-height: 1;
+    min-width: 44px;
   }
-  .btn:active { transform: scale(.98); }
-  .btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
-  .btn-primary { background: var(--c-blue); color: #fff; }
-  .btn-primary:hover:not(:disabled) { background: var(--c-blue-dk); }
-  .btn-secondary { background: var(--c-surface); color: var(--c-text); border: 1px solid var(--c-border); }
-  .btn-secondary:hover:not(:disabled) { background: var(--c-gray-lt); }
-  .btn-danger { background: var(--c-red-lt); color: var(--c-red); }
-  .btn-danger:hover:not(:disabled) { background: #FECACA; }
-  .btn-ghost { background: transparent; color: var(--c-blue); padding: 0 8px; }
-  .btn-ghost:hover { background: var(--c-blue-lt); }
-  .btn-sm { height: 32px; padding: 0 12px; font-size: 12px; }
-  .btn-icon { width: 32px; height: 32px; padding: 0; justify-content: center; border-radius: 6px; }
+  .btn svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
 
-  /* ── BADGES ────────────────────────────────── */
+  .btn-primary {
+    background: var(--blue);
+    color: #fff;
+    border-color: var(--blue);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--blue-dark);
+    border-color: var(--blue-dark);
+    box-shadow: 0 2px 8px rgba(37,99,235,.3);
+  }
+
+  .btn-secondary {
+    background: var(--panel);
+    color: var(--ink-muted);
+    border-color: var(--border-mid);
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background: var(--surface);
+    color: var(--ink);
+    border-color: var(--ink-faint);
+  }
+
+  .btn-danger {
+    background: transparent;
+    color: var(--red);
+    border-color: var(--red);
+  }
+  .btn-danger:hover:not(:disabled) {
+    background: var(--red-light);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink-muted);
+    border-color: transparent;
+    padding: 0 8px;
+  }
+  .btn-ghost:hover:not(:disabled) { background: var(--surface); color: var(--ink); }
+
+  .btn-sm {
+    height: 32px;
+    padding: 0 10px;
+    font-size: .8rem;
+    border-radius: 4px;
+  }
+
+  .btn-icon {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    justify-content: center;
+    border-radius: var(--radius);
+  }
+
+  /* ── Badges ── */
   .badge {
     display: inline-flex;
     align-items: center;
     gap: 4px;
     padding: 2px 9px;
     border-radius: 99px;
-    font-size: 11px;
+    font-size: .75rem;
     font-weight: 600;
     letter-spacing: .02em;
-    white-space: nowrap;
   }
-  .badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
-  .badge-active  { background: var(--c-blue-lt); color: var(--c-blue-dk); }
-  .badge-active::before { background: var(--c-blue); }
-  .badge-onhold  { background: #F1F5F9; color: #475569; }
-  .badge-onhold::before { background: #94A3B8; }
-  .badge-completed { background: var(--c-green-lt); color: #15803D; }
-  .badge-completed::before { background: var(--c-green); }
-  .badge-good   { background: var(--c-green-lt); color: #15803D; }
-  .badge-good::before { background: var(--c-green); }
-  .badge-partial { background: var(--c-amber-lt); color: #92400E; }
-  .badge-partial::before { background: var(--c-amber); }
-  .badge-poor   { background: var(--c-red-lt); color: #991B1B; }
-  .badge-poor::before { background: var(--c-red); }
+  .badge-blue   { background: var(--blue-light);  color: #1D4ED8; }
+  .badge-gray   { background: #F1F5F9; color: #475569; }
+  .badge-green  { background: var(--green-light); color: #15803D; }
+  .badge-amber  { background: var(--amber-light); color: #B45309; }
+  .badge-red    { background: var(--red-light);   color: #B91C1C; }
 
-  /* ── CHIPS / STATS ────────────────────────── */
-  .chip-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
-  .chip {
-    background: var(--c-surface);
-    border: 1px solid var(--c-border);
-    border-radius: var(--radius);
-    padding: 10px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-    min-width: 110px;
-    box-shadow: var(--shadow);
-  }
-  .chip-val { font-size: 22px; font-weight: 800; letter-spacing: -0.04em; color: var(--c-text); }
-  .chip-label { font-size: 11px; font-weight: 600; color: var(--c-muted); text-transform: uppercase; letter-spacing: .06em; }
-  .chip.chip-alert .chip-val { color: var(--c-amber); }
-
-  /* ── CARDS ────────────────────────────────── */
-  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+  /* ── Cards ── */
   .card {
-    background: var(--c-surface);
-    border: 1px solid var(--c-border);
-    border-radius: var(--radius);
-    padding: 16px;
-    cursor: pointer;
-    box-shadow: var(--shadow);
-    transition: box-shadow .15s, transform .15s;
-    position: relative;
-    overflow: hidden;
+    background: var(--panel);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow .15s, border-color .15s, transform .12s;
   }
-  .card::before {
-    content: '';
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 3px;
-    background: var(--c-blue);
-    opacity: 0;
-    transition: opacity .15s;
+  .card-clickable { cursor: pointer; }
+  .card-clickable:hover {
+    border-color: var(--blue);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
   }
-  .card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
-  .card:hover::before { opacity: 1; }
-  .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
-  .card-name { font-size: 15px; font-weight: 700; letter-spacing: -0.02em; }
-  .card-client { color: var(--c-muted); font-size: 12px; margin-bottom: 10px; }
-  .card-meta { display: flex; gap: 16px; font-size: 12px; color: var(--c-muted); border-top: 1px solid var(--c-border); padding-top: 10px; margin-top: 10px; }
-  .card-meta span strong { color: var(--c-text); font-weight: 600; }
 
-  /* ── FORMS ────────────────────────────────── */
-  .form-panel {
-    background: var(--c-surface);
-    border: 1px solid var(--c-border);
-    border-radius: var(--radius);
-    padding: 20px;
-    margin-bottom: 20px;
-    box-shadow: var(--shadow);
+  /* ── Project grid ── */
+  #projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
   }
-  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-  @media (max-width: 560px) { .form-grid { grid-template-columns: 1fr; } }
-  .form-group { display: flex; flex-direction: column; gap: 5px; }
-  .form-group.full { grid-column: 1 / -1; }
-  label { font-size: 12px; font-weight: 600; color: var(--c-muted); text-transform: uppercase; letter-spacing: .05em; }
-  input[type="text"], input[type="date"], select, textarea {
-    height: 40px;
-    border: 1px solid var(--c-border);
-    border-radius: 6px;
-    padding: 0 12px;
-    font-size: 14px;
-    font-family: inherit;
-    color: var(--c-text);
-    background: var(--c-bg);
-    transition: border-color .15s, box-shadow .15s;
-    width: 100%;
+  .project-card .card-inner { padding: 18px 20px; }
+  .project-card .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
   }
-  input:focus, select:focus, textarea:focus {
-    outline: none;
-    border-color: var(--c-blue);
-    box-shadow: 0 0 0 3px rgba(37,99,235,.12);
-    background: #fff;
-  }
-  textarea { height: auto; padding: 10px 12px; resize: vertical; line-height: 1.5; }
-  .checkbox-group { flex-direction: row; align-items: center; gap: 8px; height: 40px; }
-  .checkbox-group input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--c-blue); cursor: pointer; }
-  .checkbox-group label { text-transform: none; letter-spacing: 0; font-size: 14px; color: var(--c-text); font-weight: 500; cursor: pointer; }
-  .form-actions { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
-
-  /* ── TABLES ────────────────────────────────── */
-  .table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--c-border); }
-  table { width: 100%; border-collapse: collapse; background: var(--c-surface); }
-  thead tr { background: #F8FAFC; border-bottom: 1px solid var(--c-border); }
-  th {
-    padding: 10px 12px;
-    font-size: 11px;
+  .project-card .card-name {
+    font-size: 1rem;
     font-weight: 700;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+  .project-card .card-client {
+    font-size: .8rem;
+    color: var(--ink-muted);
+    margin-top: 2px;
+  }
+  .project-card .card-address {
+    font-size: .78rem;
+    color: var(--ink-faint);
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .project-card .card-stats {
+    display: flex;
+    gap: 20px;
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+  .project-card .stat { text-align: center; }
+  .project-card .stat-val {
+    font-size: 1.15rem;
+    font-weight: 700;
+    font-family: var(--font-mono);
+    color: var(--ink);
+  }
+  .project-card .stat-lbl {
+    font-size: .7rem;
+    color: var(--ink-faint);
     text-transform: uppercase;
-    letter-spacing: .06em;
-    color: var(--c-muted);
-    text-align: left;
-    white-space: nowrap;
-  }
-  td { padding: 10px 12px; border-bottom: 1px solid #F1F5F9; font-size: 13px; vertical-align: middle; }
-  tbody tr:last-child td { border-bottom: none; }
-  tbody tr:hover td { background: var(--c-gray-lt); }
-  tbody tr.needs-review td { background: var(--c-amber-lt); }
-  tbody tr.needs-review:hover td { background: #FDE68A; }
-  tr.clickable { cursor: pointer; }
-  .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
-  .status-dot.ok { background: var(--c-green); }
-  .status-dot.warn { background: var(--c-amber); }
-
-  /* worker table editable cells */
-  .worker-table input[type="text"], .worker-table input[type="number"] {
-    height: 32px;
-    font-size: 13px;
-    min-width: 80px;
-    max-width: 140px;
-    padding: 0 8px;
+    letter-spacing: .05em;
+    margin-top: 1px;
   }
 
-  /* ── UPLOAD AREA ────────────────────────────── */
-  .upload-box {
-    border: 2px dashed var(--c-border);
+  /* ── Empty state ── */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--ink-muted);
+  }
+  .empty-state .empty-icon {
+    width: 56px;
+    height: 56px;
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 16px;
+    color: var(--ink-faint);
+  }
+  .empty-state h3 { font-size: 1rem; font-weight: 600; color: var(--ink); margin-bottom: 6px; }
+  .empty-state p { font-size: .875rem; max-width: 300px; margin: 0 auto 20px; }
+
+  /* ── Form card ── */
+  .form-card {
+    background: var(--panel);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: var(--shadow-sm);
+  }
+  .form-card h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    margin-bottom: 18px;
+    color: var(--ink);
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  @media (max-width: 560px) { .form-row { grid-template-columns: 1fr; } }
+
+  .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    font-size: .8rem;
+    font-weight: 600;
+    color: var(--ink-muted);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+  }
+  .field input, .field select, .field textarea {
+    height: 42px;
+    padding: 0 12px;
+    border: 1.5px solid var(--border);
     border-radius: var(--radius);
-    background: var(--c-gray-lt);
+    font-size: .9rem;
+    font-family: var(--font-sans);
+    color: var(--ink);
+    background: var(--surface);
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .field textarea {
+    height: auto;
+    min-height: 80px;
+    padding: 10px 12px;
+    resize: vertical;
+    line-height: 1.5;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: none;
+    border-color: var(--blue);
+    box-shadow: 0 0 0 3px rgba(37,99,235,.15);
+    background: var(--panel);
+  }
+  .field input[type="checkbox"] {
+    width: 18px; height: 18px;
+    accent-color: var(--blue);
+    cursor: pointer;
+    align-self: flex-start;
+    margin-top: 2px;
+  }
+  .checkbox-row { flex-direction: row; align-items: center; gap: 10px; height: 42px; }
+  .checkbox-row label { text-transform: none; letter-spacing: 0; font-size: .9rem; font-weight: 500; }
+
+  .form-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* ── Chips / summary chips ── */
+  .chips {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+  .chip {
+    background: var(--panel);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 10px 18px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 10px;
-    padding: 32px 20px;
-    cursor: pointer;
-    transition: border-color .15s, background .15s;
-    position: relative;
+    min-width: 90px;
+    box-shadow: var(--shadow-sm);
   }
-  .upload-box:hover, .upload-box.drag-over { border-color: var(--c-blue); background: var(--c-blue-lt); }
-  .upload-box input[type="file"] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-  .upload-icon { font-size: 36px; line-height: 1; }
-  .upload-box p { font-size: 13px; color: var(--c-muted); text-align: center; }
-  .upload-box strong { color: var(--c-blue); }
-  #img-preview { max-width: 100%; max-height: 320px; border-radius: var(--radius); border: 1px solid var(--c-border); display: none; margin: 12px auto 0; display: none; }
-  .key-row { display: flex; gap: 8px; align-items: flex-end; }
-  .key-row .form-group { flex: 1; }
-  .key-row input { font-family: monospace; font-size: 13px; }
+  .chip-val {
+    font-size: 1.5rem;
+    font-weight: 800;
+    font-family: var(--font-mono);
+    color: var(--ink);
+    line-height: 1;
+  }
+  .chip-lbl {
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--ink-faint);
+    margin-top: 4px;
+    font-weight: 600;
+  }
+  .chip-amber .chip-val { color: var(--amber); }
+  .chip-blue .chip-val  { color: var(--blue); }
 
-  /* ── SPINNER ────────────────────────────────── */
-  .spinner-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 24px; }
+  /* ── Tables ── */
+  .table-wrap { overflow-x: auto; border-radius: var(--radius-lg); border: 1.5px solid var(--border); background: var(--panel); box-shadow: var(--shadow-sm); }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: .875rem;
+  }
+  thead tr {
+    background: var(--slate-800);
+    color: #fff;
+  }
+  thead th {
+    padding: 11px 14px;
+    text-align: left;
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  tbody tr {
+    border-top: 1px solid var(--border);
+    transition: background .1s;
+  }
+  tbody tr:hover:not(.tr-review) { background: #F8FAFC; }
+  tbody td {
+    padding: 11px 14px;
+    color: var(--ink);
+    vertical-align: middle;
+  }
+  .tr-review { background: var(--amber-light) !important; }
+  .tr-review:hover { background: #FDE68A !important; }
+
+  /* Status dot */
+  .dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .dot-green  { background: var(--green); }
+  .dot-amber  { background: var(--amber); }
+  .dot-red    { background: var(--red); }
+
+  /* Inline editable cells */
+  .cell-input {
+    width: 100%;
+    border: 1.5px solid transparent;
+    border-radius: 4px;
+    padding: 4px 6px;
+    font-family: var(--font-mono);
+    font-size: .85rem;
+    background: transparent;
+    color: var(--ink);
+    min-width: 70px;
+    transition: border-color .15s, background .15s;
+  }
+  .cell-input:focus {
+    outline: none;
+    border-color: var(--blue);
+    background: var(--panel);
+  }
+  .cell-input-name { font-family: var(--font-sans); min-width: 120px; }
+
+  /* ── Upload zone ── */
+  .upload-zone {
+    border: 2.5px dashed var(--border-mid);
+    border-radius: var(--radius-lg);
+    background: var(--surface);
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s, background .2s;
+    margin-bottom: 20px;
+  }
+  .upload-zone:hover { border-color: var(--blue); background: var(--blue-light); }
+  .upload-zone.has-image { padding: 12px; }
+  .upload-zone .upload-icon { color: var(--ink-faint); margin-bottom: 10px; }
+  .upload-zone h4 { font-size: .95rem; font-weight: 600; margin-bottom: 4px; }
+  .upload-zone p { font-size: .8rem; color: var(--ink-muted); }
+  #preview-img {
+    max-width: 100%;
+    max-height: 280px;
+    border-radius: var(--radius);
+    display: none;
+    margin: 0 auto;
+    object-fit: contain;
+  }
+  #file-input { display: none; }
+
+  /* ── API key row ── */
+  .api-key-row {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    margin-bottom: 16px;
+  }
+  .api-key-row .field { flex: 1; margin-bottom: 0; }
+  .api-key-row input[type="password"],
+  .api-key-row input[type="text"] {
+    font-family: var(--font-mono);
+    font-size: .8rem;
+    letter-spacing: .04em;
+  }
+
+  /* ── Spinner ── */
+  .spinner-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 32px;
+    color: var(--ink-muted);
+    font-size: .9rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
   .spinner {
-    width: 36px; height: 36px;
-    border: 3px solid var(--c-border);
-    border-top-color: var(--c-blue);
+    width: 32px; height: 32px;
+    border: 3px solid var(--border);
+    border-top-color: var(--blue);
     border-radius: 50%;
     animation: spin .7s linear infinite;
   }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .spinner-label { font-size: 13px; color: var(--c-muted); font-weight: 500; }
 
-  /* ── ALERT ────────────────────────────────── */
+  /* ── Alert ── */
   .alert {
-    padding: 12px 14px;
     border-radius: var(--radius);
-    font-size: 13px;
-    margin-bottom: 14px;
-    border: 1px solid transparent;
+    padding: 12px 16px;
+    font-size: .875rem;
+    margin-bottom: 16px;
+    border-left: 4px solid;
   }
-  .alert-error { background: var(--c-red-lt); color: #991B1B; border-color: #FECACA; }
-  .alert-success { background: var(--c-green-lt); color: #15803D; border-color: #BBF7D0; }
+  .alert-error { background: var(--red-light); border-color: var(--red); color: #7F1D1D; }
+  .alert-success { background: var(--green-light); border-color: var(--green); color: #14532D; }
 
-  /* ── SECTION DIVIDER ────────────────────────── */
-  .section-head {
+  /* ── Worker table actions row ── */
+  .table-actions-row {
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    margin-bottom: 12px;
+    align-items: center;
+    padding: 10px 14px;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap;
     gap: 8px;
   }
-  .section-head h3 { margin-bottom: 0; }
-
-  /* ── BACK LINK ────────────────────────────────── */
-  .back-link {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    color: var(--c-blue);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-bottom: 16px;
-    text-decoration: none;
-    background: none;
-    border: none;
-    font-family: inherit;
-    padding: 0;
+  .worker-summary {
+    font-size: .8rem;
+    color: var(--ink-muted);
+    font-family: var(--font-mono);
   }
-  .back-link:hover { text-decoration: underline; }
+  .worker-summary strong { color: var(--ink); }
 
-  /* ── EMPTY STATE ────────────────────────────── */
-  .empty {
-    text-align: center;
-    padding: 48px 20px;
-    color: var(--c-muted);
-  }
-  .empty-icon { font-size: 40px; margin-bottom: 10px; }
-  .empty h3 { font-size: 15px; font-weight: 700; color: var(--c-text); margin-bottom: 4px; }
-  .empty p { font-size: 13px; }
-
-  /* ── SUMMARY ROW ────────────────────────────── */
-  .summary-row {
-    display: flex;
-    gap: 20px;
-    font-size: 13px;
-    color: var(--c-muted);
-    margin-top: 10px;
-    flex-wrap: wrap;
-  }
-  .summary-row strong { color: var(--c-text); }
-
-  /* ── META LIST ────────────────────────────── */
-  .meta-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
-  .meta-item { display: flex; gap: 8px; font-size: 13px; }
-  .meta-key { color: var(--c-muted); font-weight: 600; min-width: 90px; flex-shrink: 0; }
-
-  /* ── NOTES ────────────────────────────────── */
-  .notes-box {
-    background: var(--c-gray-lt);
-    border: 1px solid var(--c-border);
+  /* ── AI notes ── */
+  .ai-notes-block {
+    background: #F8FAFF;
+    border: 1.5px solid #DBEAFE;
     border-radius: var(--radius);
     padding: 12px 14px;
-    font-size: 13px;
-    color: var(--c-muted);
+    font-size: .83rem;
+    color: var(--ink-muted);
     font-style: italic;
-    min-height: 60px;
+    line-height: 1.6;
     margin-bottom: 16px;
-    white-space: pre-wrap;
+  }
+  .ai-notes-block strong { font-style: normal; font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--blue); font-weight: 700; display: block; margin-bottom: 4px; }
+
+  /* ── Log meta grid ── */
+  .log-meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .log-meta-item { }
+  .log-meta-item .lm-label {
+    font-size: .7rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--ink-faint);
+    font-weight: 700;
+    margin-bottom: 3px;
+  }
+  .log-meta-item .lm-val { font-size: .95rem; color: var(--ink); font-weight: 500; }
+
+  /* ── Caution tape accent (signature element) ── */
+  .caution-bar {
+    height: 4px;
+    background: repeating-linear-gradient(
+      -45deg,
+      var(--amber) 0px,
+      var(--amber) 8px,
+      #1E293B 8px,
+      #1E293B 16px
+    );
+    border-radius: 2px;
+    margin-bottom: 20px;
+    opacity: .55;
   }
 
-  /* ── RESPONSIVE ────────────────────────────── */
-  @media (max-width: 600px) {
-    #main { padding: 16px 12px 80px; }
-    .form-actions { flex-direction: column; }
-    .form-actions .btn { width: 100%; justify-content: center; }
-    .chip-row { gap: 8px; }
-    .chip { min-width: 90px; }
+  /* ── Section divider ── */
+  .section-label {
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--ink-faint);
+    margin-bottom: 10px;
+    margin-top: 20px;
   }
 
-  /* ── UTILITY ────────────────────────────────── */
-  .hidden { display: none !important; }
-  .flex-gap { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .text-muted { color: var(--c-muted); }
-  .mt8 { margin-top: 8px; }
-  .mt16 { margin-top: 16px; }
-  .mb12 { margin-bottom: 12px; }
+  /* ── Project detail metadata ── */
+  .project-meta {
+    background: var(--panel);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    box-shadow: var(--shadow-sm);
+  }
+  .project-meta .pm-item { flex: 1; min-width: 150px; }
+  .project-meta .pm-label { font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-faint); margin-bottom: 3px; }
+  .project-meta .pm-val { font-size: .95rem; color: var(--ink); font-weight: 500; }
+
+  /* ── Responsive ── */
+  @media (max-width: 640px) {
+    #app-body { padding: 16px 12px 48px; }
+    .form-card { padding: 16px; }
+    .chips { gap: 8px; }
+    .chip { min-width: 72px; padding: 8px 12px; }
+    .chip-val { font-size: 1.2rem; }
+    .view-header { flex-direction: column; }
+    .view-header-actions { width: 100%; }
+    .view-header-actions .btn { flex: 1; justify-content: center; }
+    thead th, tbody td { padding: 9px 10px; }
+  }
+
+  /* ── Toggle show key ── */
+  .key-toggle { position: relative; }
+  .key-toggle-btn {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--ink-faint);
+    padding: 4px;
+  }
+  .key-toggle-btn:hover { color: var(--ink-muted); }
+  .key-toggle input { padding-right: 36px !important; }
+
+  /* ── Delete icon button ── */
+  .delete-row-btn {
+    width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    border: none; background: none;
+    color: var(--ink-faint);
+    cursor: pointer;
+    border-radius: 4px;
+    transition: background .12s, color .12s;
+  }
+  .delete-row-btn:hover { background: var(--red-light); color: var(--red); }
 </style>
 </head>
 <body>
 
-<!-- ═══════════════════════ HEADER ═══════════════════════ -->
 <header id="app-header">
-  <a class="logo" onclick="showProjects()">
-    <div class="logo-icon">📋</div>
-    <span class="logo-text">Field Labor Logs</span>
-  </a>
-  <div id="breadcrumb"></div>
+  <div class="logo-mark">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/>
+      <rect x="9" y="3" width="6" height="4" rx="1"/>
+      <line x1="9" y1="12" x2="15" y2="12"/>
+      <line x1="9" y1="16" x2="13" y2="16"/>
+    </svg>
+  </div>
+  <div>
+    <h1>Field Labor Logs</h1>
+  </div>
 </header>
 
-<main id="main">
+<main id="app-body">
 
-  <!-- ════════ 1. PROJECTS VIEW ════════ -->
+  <!-- ══════════════════════════════════════════
+       VIEW 1: Projects
+  ══════════════════════════════════════════ -->
   <div id="view-projects" class="view active">
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
-      <div>
-        <div class="page-title">Projects</div>
-        <div class="page-sub">Tap a project to view logs and hours.</div>
+    <div class="view-header">
+      <div class="view-header-left">
+        <h2>Projects</h2>
+        <div class="sub">Select a project to view logs or create a new one.</div>
       </div>
-      <button class="btn btn-primary" onclick="toggleNewProjectForm()">＋ New project</button>
+      <div class="view-header-actions">
+        <button class="btn btn-primary" onclick="showNewProjectForm()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Project
+        </button>
+      </div>
     </div>
 
-    <!-- inline new project form -->
-    <div id="new-project-form" class="form-panel hidden">
-      <h3>New project</h3>
-      <div class="form-grid">
-        <div class="form-group">
-          <label for="np-name">Project name <span style="color:var(--c-red)">*</span></label>
-          <input type="text" id="np-name" placeholder="e.g. Riverside Mixed Use">
+    <!-- New project form (inline) -->
+    <div id="new-project-form" class="form-card" style="display:none;">
+      <h3>New Project</h3>
+      <div class="form-row">
+        <div class="field">
+          <label>Project Name <span style="color:var(--red)">*</span></label>
+          <input type="text" id="np-name" placeholder="e.g. Riverside Office Build">
         </div>
-        <div class="form-group">
-          <label for="np-client">Client name</label>
-          <input type="text" id="np-client" placeholder="e.g. Acme Development">
+        <div class="field">
+          <label>Client Name</label>
+          <input type="text" id="np-client" placeholder="e.g. Acme Construction">
         </div>
-        <div class="form-group full">
-          <label for="np-address">Site address</label>
-          <input type="text" id="np-address" placeholder="123 Main St, City, ST">
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label>Site Address</label>
+          <input type="text" id="np-address" placeholder="e.g. 1200 Commerce Dr, Austin TX">
         </div>
-        <div class="form-group">
-          <label for="np-status">Status</label>
+        <div class="field">
+          <label>Status</label>
           <select id="np-status">
             <option value="Active">Active</option>
             <option value="On Hold">On Hold</option>
@@ -480,195 +768,253 @@
           </select>
         </div>
       </div>
-      <div id="np-error" class="alert alert-error hidden"></div>
       <div class="form-actions">
-        <button class="btn btn-primary" onclick="createProject()">Create project</button>
-        <button class="btn btn-secondary" onclick="toggleNewProjectForm(false)">Cancel</button>
+        <button class="btn btn-secondary" onclick="hideNewProjectForm()">Cancel</button>
+        <button class="btn btn-primary" onclick="createProject()">Create Project</button>
       </div>
     </div>
 
-    <div id="project-cards" class="card-grid"></div>
-    <div id="projects-empty" class="empty hidden">
-      <div class="empty-icon">🏗️</div>
-      <h3>No projects yet</h3>
-      <p>Create your first project to start logging field labor.</p>
-    </div>
+    <div id="projects-grid"></div>
   </div>
 
-  <!-- ════════ 2. PROJECT DETAIL ════════ -->
-  <div id="view-project" class="view">
-    <button class="back-link" onclick="showProjects()">← All projects</button>
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:8px;">
-      <div>
-        <div class="flex-gap mb12" style="margin-bottom:6px;">
-          <div class="page-title" id="pd-name"></div>
-          <div id="pd-status-badge"></div>
-        </div>
-        <div class="text-muted" id="pd-client" style="font-size:13px;"></div>
-        <div class="text-muted" id="pd-address" style="font-size:12px;margin-top:2px;"></div>
+  <!-- ══════════════════════════════════════════
+       VIEW 2: Project Detail
+  ══════════════════════════════════════════ -->
+  <div id="view-project-detail" class="view">
+    <button class="back-link" onclick="showView('projects')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 5l-7 7 7 7"/></svg>
+      All Projects
+    </button>
+
+    <div class="view-header">
+      <div class="view-header-left">
+        <h2 id="pd-name">Project Name</h2>
+        <div class="sub" id="pd-sub"></div>
       </div>
-      <div class="flex-gap">
-        <button class="btn btn-secondary btn-sm" onclick="exportProjectCSV()">⬇ Export CSV</button>
-        <button class="btn btn-primary" onclick="showUpload()">📷 Upload new log</button>
+      <div class="view-header-actions">
+        <button class="btn btn-secondary" onclick="exportCSV()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Export CSV
+        </button>
+        <button class="btn btn-primary" onclick="goToUpload()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Upload Log
+        </button>
       </div>
     </div>
 
-    <div class="chip-row" id="pd-chips"></div>
+    <div id="pd-project-meta" class="project-meta"></div>
 
-    <div class="section-head">
-      <h3>Labor logs</h3>
-    </div>
-    <div class="table-wrap">
-      <table>
+    <div class="chips" id="pd-chips"></div>
+
+    <div class="section-label">Labor Logs</div>
+    <div id="pd-logs-wrap" class="table-wrap">
+      <table id="pd-logs-table">
         <thead>
           <tr>
             <th>Date</th>
             <th>Foreman</th>
             <th>Site</th>
             <th>Workers</th>
-            <th>Hours</th>
+            <th>Total Hrs</th>
             <th>Legibility</th>
             <th>Signed</th>
+            <th></th>
           </tr>
         </thead>
         <tbody id="pd-logs-body"></tbody>
       </table>
     </div>
-    <div id="pd-logs-empty" class="empty hidden">
-      <div class="empty-icon">📄</div>
+    <div id="pd-empty" class="empty-state" style="display:none;">
+      <div class="empty-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      </div>
       <h3>No logs yet</h3>
-      <p>Upload a photo of a paper log to get started.</p>
+      <p>Upload a photo of a paper labor log to get started.</p>
+      <button class="btn btn-primary" onclick="goToUpload()">Upload first log</button>
     </div>
   </div>
 
-  <!-- ════════ 3. UPLOAD & EXTRACT VIEW ════════ -->
+  <!-- ══════════════════════════════════════════
+       VIEW 3: Upload & Extract
+  ══════════════════════════════════════════ -->
   <div id="view-upload" class="view">
-    <button class="back-link" id="upload-back-link" onclick="showProject()">← Back to project</button>
-    <div class="page-title" id="upload-project-name"></div>
-    <div class="page-sub">Upload a photo of a paper labor log for AI extraction.</div>
-
-    <div class="form-panel">
-      <h3>1. Select photo</h3>
-      <div class="upload-box" id="upload-box">
-        <input type="file" id="file-input" accept="image/*" capture="environment"
-               onchange="handleFileSelect(event)">
-        <div class="upload-icon">📷</div>
-        <p><strong>Tap to take a photo</strong> or select from library</p>
-        <p>Supports JPG, PNG, HEIC, WebP</p>
-      </div>
-      <img id="img-preview" alt="Selected log photo">
-    </div>
-
-    <div class="form-panel">
-      <h3>2. AI extraction key</h3>
-      <div class="key-row">
-        <div class="form-group">
-          <label for="api-key-input">Google AI Studio API key</label>
-          <input type="text" id="api-key-input" placeholder="AIza…" autocomplete="off" spellcheck="false"
-                 oninput="updateExtractButton()">
-        </div>
-        <button class="btn btn-secondary btn-sm" onclick="saveApiKey()" style="margin-bottom:1px;">Save key</button>
-      </div>
-      <div id="key-saved-msg" class="hidden" style="font-size:12px;color:var(--c-green);margin-top:4px;">✓ Key saved to this device</div>
-    </div>
-
-    <div id="extract-alert" class="alert alert-error hidden"></div>
-    <div id="extract-spinner" class="spinner-wrap hidden">
-      <div class="spinner"></div>
-      <span class="spinner-label">Analyzing photo…</span>
-    </div>
-
-    <button class="btn btn-primary" id="extract-btn" onclick="extractData()" disabled
-            style="width:100%;justify-content:center;height:48px;font-size:15px;margin-bottom:20px;">
-      🔍 Extract labor data
+    <button class="back-link" onclick="cancelUpload()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 5l-7 7 7 7"/></svg>
+      Back to Project
     </button>
 
-    <!-- ── REVIEW FORM (shown after extraction) ── -->
-    <div id="review-section" class="hidden">
-      <div class="form-panel">
-        <h3>3. Review &amp; edit extracted data</h3>
-        <div id="legibility-row" style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
-          <span style="font-size:12px;font-weight:600;color:var(--c-muted);">LEGIBILITY</span>
-          <div id="review-legibility"></div>
+    <div class="view-header">
+      <div class="view-header-left">
+        <h2>Upload Labor Log</h2>
+        <div class="sub" id="upload-project-name"></div>
+      </div>
+    </div>
+
+    <!-- Photo upload -->
+    <div class="form-card">
+      <h3>Step 1 — Photo</h3>
+      <div class="upload-zone" id="upload-zone" onclick="document.getElementById('file-input').click()">
+        <div class="upload-icon">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
         </div>
-        <div class="form-grid">
-          <div class="form-group">
-            <label for="rv-date">Log date</label>
-            <input type="date" id="rv-date">
+        <h4>Tap to photograph or upload a log</h4>
+        <p>Opens rear camera on mobile. JPEG, PNG, HEIC supported.</p>
+      </div>
+      <input type="file" id="file-input" accept="image/*" capture="environment" onchange="handleFileSelect(event)">
+      <img id="preview-img" alt="Log preview">
+    </div>
+
+    <!-- API Key -->
+    <div class="form-card">
+      <h3>Step 2 — Anthropic API Key</h3>
+      <div class="api-key-row">
+        <div class="field key-toggle" style="margin-bottom:0">
+          <label>API Key</label>
+          <input type="password" id="api-key-input" placeholder="sk-ant-..." oninput="checkExtractReady()">
+          <button class="key-toggle-btn" onclick="toggleKeyVisibility()" title="Show/hide key">
+            <svg id="eye-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          </button>
+        </div>
+        <button class="btn btn-secondary btn-sm" style="height:42px;margin-bottom:0" onclick="saveApiKey()">Save Key</button>
+      </div>
+      <p style="font-size:.78rem;color:var(--ink-faint);margin-top:6px;">Your key is stored only in your browser. Never shared.</p>
+    </div>
+
+    <!-- Extract button -->
+    <div style="margin-bottom:20px;">
+      <button class="btn btn-primary" id="extract-btn" onclick="extractData()" disabled style="width:100%;justify-content:center;height:48px;font-size:1rem;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        Extract Labor Data
+      </button>
+    </div>
+
+    <!-- Loading / Error -->
+    <div id="extract-spinner" style="display:none;" class="form-card">
+      <div class="spinner-wrap">
+        <div class="spinner"></div>
+        <span>Analyzing photo…</span>
+      </div>
+    </div>
+    <div id="extract-error" class="alert alert-error" style="display:none;"></div>
+
+    <!-- Review & Edit form (shown after extraction) -->
+    <div id="review-section" style="display:none;">
+      <div class="caution-bar"></div>
+      <div class="form-card">
+        <h3>Review &amp; Edit Extracted Data</h3>
+        <div class="form-row">
+          <div class="field">
+            <label>Log Date</label>
+            <input type="date" id="rev-date">
           </div>
-          <div class="form-group">
-            <label for="rv-foreman">Foreman</label>
-            <input type="text" id="rv-foreman" placeholder="Name">
+          <div class="field">
+            <label>Foreman Name</label>
+            <input type="text" id="rev-foreman" placeholder="Name">
           </div>
-          <div class="form-group full">
-            <label for="rv-site">Site / location</label>
-            <input type="text" id="rv-site" placeholder="Location or description">
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label>Site / Location</label>
+            <input type="text" id="rev-site" placeholder="Site name or address">
           </div>
-          <div class="form-group checkbox-group">
-            <input type="checkbox" id="rv-signed">
-            <label for="rv-signed">Log sheet is signed</label>
+          <div class="field">
+            <label>Legibility</label>
+            <input type="text" id="rev-legibility" readonly style="background:var(--surface)">
           </div>
+        </div>
+        <div class="field checkbox-row">
+          <input type="checkbox" id="rev-signed">
+          <label for="rev-signed">Log is signed by foreman</label>
         </div>
       </div>
 
-      <div class="form-panel">
-        <div class="section-head">
-          <h3>Worker entries</h3>
-          <button class="btn btn-secondary btn-sm" onclick="addWorkerRow()">＋ Add row</button>
-        </div>
-        <div class="table-wrap">
-          <table class="worker-table">
+      <div class="form-card">
+        <h3>Worker Entries</h3>
+        <div class="table-wrap" style="margin-bottom:0;">
+          <table>
             <thead>
               <tr>
-                <th style="width:28px;"></th>
-                <th>Worker name</th>
+                <th style="width:26px;"></th>
+                <th>Worker Name</th>
                 <th>Start</th>
                 <th>End</th>
                 <th>Hours</th>
                 <th style="width:36px;"></th>
               </tr>
             </thead>
-            <tbody id="rv-workers-body"></tbody>
+            <tbody id="rev-workers-body"></tbody>
           </table>
+          <div class="table-actions-row">
+            <div class="worker-summary" id="rev-summary">—</div>
+            <button class="btn btn-secondary btn-sm" onclick="addWorkerRow('rev-workers-body')">+ Add Row</button>
+          </div>
         </div>
-        <div class="summary-row" id="rv-summary"></div>
       </div>
 
-      <div class="form-panel">
-        <h3>AI notes</h3>
-        <div class="notes-box" id="rv-ai-notes">—</div>
+      <div class="form-card" id="ai-notes-card" style="display:none;">
+        <h3>AI Notes</h3>
+        <div class="ai-notes-block" id="rev-ai-notes"></div>
       </div>
 
-      <div class="form-actions">
-        <button class="btn btn-primary" onclick="saveLog()">Save log</button>
-        <button class="btn btn-secondary" onclick="showProject()">Cancel</button>
+      <div class="form-actions" style="border-top:none;padding-top:0;margin-top:0;">
+        <button class="btn btn-secondary" onclick="cancelUpload()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveLog()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Save Log
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- ════════ 4. LOG DETAIL VIEW ════════ -->
-  <div id="view-log" class="view">
-    <button class="back-link" onclick="showProject()">← Back to project</button>
-    <div class="page-title" id="ld-title">Log detail</div>
-    <div class="page-sub" id="ld-sub"></div>
+  <!-- ══════════════════════════════════════════
+       VIEW 4: Log Detail
+  ══════════════════════════════════════════ -->
+  <div id="view-log-detail" class="view">
+    <button class="back-link" onclick="showProjectDetail(currentProjectId)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 5l-7 7 7 7"/></svg>
+      Back to Project
+    </button>
 
-    <div class="form-panel">
-      <div class="meta-list" id="ld-meta"></div>
-      <h3 style="margin-top:8px;">AI notes</h3>
-      <div class="notes-box" id="ld-ai-notes">—</div>
+    <div class="view-header">
+      <div class="view-header-left">
+        <h2 id="ld-title">Labor Log</h2>
+        <div class="sub" id="ld-sub"></div>
+      </div>
+      <div class="view-header-actions">
+        <button class="btn btn-secondary" id="ld-view-photo-btn" onclick="toggleLogPhoto()" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          View Photo
+        </button>
+        <button class="btn btn-danger" onclick="deleteLog()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          Delete
+        </button>
+        <button class="btn btn-primary" onclick="saveLogEdits()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" width="16" height="16"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Save Changes
+        </button>
+      </div>
     </div>
 
-    <div class="form-panel">
-      <div class="section-head">
-        <h3>Worker entries</h3>
-        <button class="btn btn-secondary btn-sm" onclick="addLogDetailWorkerRow()">＋ Add row</button>
-      </div>
-      <div class="table-wrap">
-        <table class="worker-table">
+    <!-- Original photo viewer (collapsible) -->
+    <div id="ld-photo-panel" class="form-card" style="display:none;margin-bottom:20px;">
+      <h3>Original Log Photo</h3>
+      <img id="ld-photo-img" alt="Original log photo" style="max-width:100%;max-height:480px;object-fit:contain;border-radius:var(--radius);display:block;margin:0 auto;">
+    </div>
+
+    <div class="log-meta" id="ld-meta"></div>
+
+    <div id="ld-ai-notes" class="ai-notes-block" style="display:none;"></div>
+
+    <div class="form-card">
+      <h3>Worker Entries</h3>
+      <div class="table-wrap" style="margin-bottom:0;">
+        <table>
           <thead>
             <tr>
-              <th style="width:28px;"></th>
-              <th>Worker name</th>
+              <th style="width:26px;"></th>
+              <th>Worker Name</th>
               <th>Start</th>
               <th>End</th>
               <th>Hours</th>
@@ -677,180 +1023,113 @@
           </thead>
           <tbody id="ld-workers-body"></tbody>
         </table>
+        <div class="table-actions-row">
+          <div class="worker-summary" id="ld-summary">—</div>
+          <button class="btn btn-secondary btn-sm" onclick="addWorkerRow('ld-workers-body')">+ Add Row</button>
+        </div>
       </div>
-      <div class="summary-row" id="ld-summary"></div>
     </div>
 
-    <div class="form-actions">
-      <button class="btn btn-primary" onclick="saveLogChanges()">Save changes</button>
-      <button class="btn btn-danger" onclick="deleteLog()">Delete log</button>
-      <button class="btn btn-secondary" onclick="showProject()">Cancel</button>
-    </div>
+    <div id="ld-save-success" class="alert alert-success" style="display:none;">Changes saved successfully.</div>
   </div>
 
 </main>
 
 <script>
-// ═══════════════════════════════════════════════════════════
-//  STORAGE HELPERS
-// ═══════════════════════════════════════════════════════════
-const KEY_PROJECTS = 'fll_projects';
-const KEY_LOGS     = 'fll_logs';
-const KEY_APIKEY   = 'fll_api_key';
+// ══════════════════════════════════════════════════════
+// Data layer
+// ══════════════════════════════════════════════════════
 
-function getProjects() { return JSON.parse(localStorage.getItem(KEY_PROJECTS) || '[]'); }
-function getLogs()     { return JSON.parse(localStorage.getItem(KEY_LOGS) || '[]'); }
-function saveProjects(p) { localStorage.setItem(KEY_PROJECTS, JSON.stringify(p)); }
-function saveLogs(l)     { localStorage.setItem(KEY_LOGS, JSON.stringify(l)); }
+const LS_PROJECTS = 'fll_projects';
+const LS_LOGS     = 'fll_logs';
+const LS_API_KEY  = 'fll_api_key';
+
+function getProjects() { return JSON.parse(localStorage.getItem(LS_PROJECTS) || '[]'); }
+function getLogs()     { return JSON.parse(localStorage.getItem(LS_LOGS)     || '[]'); }
+function saveProjects(arr) { localStorage.setItem(LS_PROJECTS, JSON.stringify(arr)); }
+function saveLogs(arr)     { localStorage.setItem(LS_LOGS,     JSON.stringify(arr)); }
+
 function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
 
-// ═══════════════════════════════════════════════════════════
-//  STATE
-// ═══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+// State
+// ══════════════════════════════════════════════════════
+
 let currentProjectId = null;
-let currentLogId     = null;
-let selectedFile     = null;
+let currentLogId = null;
+let selectedImageBase64 = null;
+let selectedImageType = 'image/jpeg';
 
-// ═══════════════════════════════════════════════════════════
-//  NAVIGATION / VIEW MANAGEMENT
-// ═══════════════════════════════════════════════════════════
-function showView(id) {
+// ══════════════════════════════════════════════════════
+// View routing
+// ══════════════════════════════════════════════════════
+
+function showView(name) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  window.scrollTo(0, 0);
+  document.getElementById('view-' + name).classList.add('active');
 }
 
-function setBreadcrumb(parts) {
-  const bc = document.getElementById('breadcrumb');
-  bc.innerHTML = '';
-  parts.forEach((p, i) => {
-    if (i > 0) bc.insertAdjacentHTML('beforeend', '<span class="sep">›</span>');
-    if (p.action) {
-      bc.insertAdjacentHTML('beforeend',
-        `<span class="crumb${i===parts.length-1?' active':''}" onclick="${p.action}">${p.label}</span>`);
-    } else {
-      bc.insertAdjacentHTML('beforeend',
-        `<span class="crumb${i===parts.length-1?' active':''}">${p.label}</span>`);
-    }
-  });
-}
+// ══════════════════════════════════════════════════════
+// PROJECTS VIEW
+// ══════════════════════════════════════════════════════
 
-function showProjects() {
-  currentProjectId = null;
-  currentLogId = null;
-  renderProjects();
-  showView('view-projects');
-  setBreadcrumb([{ label: 'Projects' }]);
-}
-
-function showProject(projectId) {
-  if (projectId) currentProjectId = projectId;
-  renderProjectDetail();
-  showView('view-project');
-  const proj = getProjects().find(p => p.id === currentProjectId);
-  setBreadcrumb([
-    { label: 'Projects', action: 'showProjects()' },
-    { label: proj ? proj.name : 'Project' }
-  ]);
-}
-
-function showUpload() {
-  resetUploadView();
-  const proj = getProjects().find(p => p.id === currentProjectId);
-  document.getElementById('upload-project-name').textContent = proj ? proj.name : '';
-  showView('view-upload');
-  const apiKey = localStorage.getItem(KEY_APIKEY) || '';
-  document.getElementById('api-key-input').value = apiKey;
-  if (apiKey) document.getElementById('key-saved-msg').classList.remove('hidden');
-  updateExtractButton();
-  setBreadcrumb([
-    { label: 'Projects', action: 'showProjects()' },
-    { label: proj ? proj.name : 'Project', action: 'showProject()' },
-    { label: 'Upload log' }
-  ]);
-}
-
-function showLogDetail(logId) {
-  currentLogId = logId;
-  renderLogDetail();
-  showView('view-log');
-  const proj = getProjects().find(p => p.id === currentProjectId);
-  const log = getLogs().find(l => l.id === logId);
-  setBreadcrumb([
-    { label: 'Projects', action: 'showProjects()' },
-    { label: proj ? proj.name : 'Project', action: 'showProject()' },
-    { label: log ? (log.date || 'Log') : 'Log' }
-  ]);
-}
-
-// ═══════════════════════════════════════════════════════════
-//  BADGE HELPERS
-// ═══════════════════════════════════════════════════════════
-function statusBadge(status) {
-  const map = { 'Active': 'badge-active', 'On Hold': 'badge-onhold', 'Completed': 'badge-completed' };
-  return `<span class="badge ${map[status]||'badge-onhold'}">${status}</span>`;
-}
-function legBadge(leg) {
-  const map = { 'good': 'badge-good', 'partial': 'badge-partial', 'poor': 'badge-poor' };
-  const labels = { 'good': 'Good', 'partial': 'Partial', 'poor': 'Poor' };
-  return `<span class="badge ${map[leg]||'badge-partial'}">${labels[leg]||leg||'—'}</span>`;
-}
-
-// ═══════════════════════════════════════════════════════════
-//  PROJECTS VIEW
-// ═══════════════════════════════════════════════════════════
 function renderProjects() {
   const projects = getProjects();
   const logs = getLogs();
-  const container = document.getElementById('project-cards');
-  const empty = document.getElementById('projects-empty');
-  container.innerHTML = '';
-  if (!projects.length) { empty.classList.remove('hidden'); return; }
-  empty.classList.add('hidden');
-  projects.slice().reverse().forEach(proj => {
-    const projLogs = logs.filter(l => l.projectId === proj.id);
-    const totalHrs = projLogs.reduce((s, l) =>
-      s + (l.workers||[]).reduce((ws, w) => ws + (parseFloat(w.hours)||0), 0), 0);
-    const card = document.createElement('div');
-    card.className = 'card';
-    card.onclick = () => showProject(proj.id);
-    card.innerHTML = `
-      <div class="card-header">
-        <div class="card-name">${esc(proj.name)}</div>
-        ${statusBadge(proj.status)}
-      </div>
-      <div class="card-client">${esc(proj.client || 'No client')}</div>
-      ${proj.address ? `<div style="font-size:11px;color:var(--c-muted);margin-bottom:8px;">${esc(proj.address)}</div>` : ''}
-      <div class="card-meta">
-        <span><strong>${projLogs.length}</strong> logs</span>
-        <span><strong>${totalHrs % 1 === 0 ? totalHrs : totalHrs.toFixed(1)}</strong> hrs</span>
+  const grid = document.getElementById('projects-grid');
+
+  if (projects.length === 0) {
+    grid.innerHTML = `
+      <div class="empty-state" style="grid-column:1/-1;">
+        <div class="empty-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <h3>No projects yet</h3>
+        <p>Create your first project to start logging field labor.</p>
+        <button class="btn btn-primary" onclick="showNewProjectForm()">Create project</button>
       </div>`;
-    container.appendChild(card);
-  });
+    return;
+  }
+
+  grid.innerHTML = projects.map(p => {
+    const pLogs = logs.filter(l => l.projectId === p.id);
+    const totalHours = pLogs.reduce((sum, l) => sum + (l.workers || []).reduce((s, w) => s + (parseFloat(w.hours) || 0), 0), 0);
+    return `
+      <div class="card card-clickable project-card" onclick="showProjectDetail('${p.id}')">
+        <div class="card-inner">
+          <div class="card-top">
+            <div>
+              <div class="card-name">${esc(p.name)}</div>
+              <div class="card-client">${esc(p.client || '—')}</div>
+              ${p.address ? `<div class="card-address"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>${esc(p.address)}</div>` : ''}
+            </div>
+            <div>${statusBadge(p.status)}</div>
+          </div>
+          <div class="card-stats">
+            <div class="stat"><div class="stat-val">${pLogs.length}</div><div class="stat-lbl">Logs</div></div>
+            <div class="stat"><div class="stat-val">${totalHours.toFixed(1)}</div><div class="stat-lbl">Total Hrs</div></div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
 }
 
-function toggleNewProjectForm(forceShow) {
-  const form = document.getElementById('new-project-form');
-  const show = forceShow !== undefined ? forceShow : form.classList.contains('hidden');
-  if (show) {
-    form.classList.remove('hidden');
-    document.getElementById('np-name').value = '';
-    document.getElementById('np-client').value = '';
-    document.getElementById('np-address').value = '';
-    document.getElementById('np-status').value = 'Active';
-    document.getElementById('np-error').classList.add('hidden');
-    document.getElementById('np-name').focus();
-  } else {
-    form.classList.add('hidden');
-  }
+function showNewProjectForm() {
+  document.getElementById('new-project-form').style.display = 'block';
+  document.getElementById('np-name').focus();
+}
+
+function hideNewProjectForm() {
+  document.getElementById('new-project-form').style.display = 'none';
+  ['np-name','np-client','np-address'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('np-status').value = 'Active';
 }
 
 function createProject() {
   const name = document.getElementById('np-name').value.trim();
-  const errEl = document.getElementById('np-error');
-  if (!name) { errEl.textContent = 'Project name is required.'; errEl.classList.remove('hidden'); return; }
-  errEl.classList.add('hidden');
-  const proj = {
+  if (!name) { document.getElementById('np-name').focus(); return; }
+  const projects = getProjects();
+  const p = {
     id: uid(),
     name,
     client: document.getElementById('np-client').value.trim(),
@@ -858,388 +1137,558 @@ function createProject() {
     status: document.getElementById('np-status').value,
     createdAt: new Date().toISOString()
   };
-  const projects = getProjects();
-  projects.push(proj);
+  projects.push(p);
   saveProjects(projects);
-  toggleNewProjectForm(false);
+  hideNewProjectForm();
   renderProjects();
 }
 
-// ═══════════════════════════════════════════════════════════
-//  PROJECT DETAIL
-// ═══════════════════════════════════════════════════════════
-function renderProjectDetail() {
-  const proj = getProjects().find(p => p.id === currentProjectId);
-  if (!proj) return showProjects();
-  document.getElementById('pd-name').textContent = proj.name;
-  document.getElementById('pd-status-badge').innerHTML = statusBadge(proj.status);
-  document.getElementById('pd-client').textContent = proj.client || '';
-  document.getElementById('pd-address').textContent = proj.address || '';
+// ══════════════════════════════════════════════════════
+// PROJECT DETAIL VIEW
+// ══════════════════════════════════════════════════════
 
-  const logs = getLogs().filter(l => l.projectId === currentProjectId);
-  const totalHrs = logs.reduce((s, l) =>
-    s + (l.workers||[]).reduce((ws, w) => ws + (parseFloat(w.hours)||0), 0), 0);
-  const needsReview = logs.reduce((s, l) =>
-    s + (l.workers||[]).filter(w => w.needsReview).length, 0);
+function showProjectDetail(projectId) {
+  currentProjectId = projectId;
+  const projects = getProjects();
+  const p = projects.find(x => x.id === projectId);
+  if (!p) { showView('projects'); return; }
 
+  const logs = getLogs().filter(l => l.projectId === projectId);
+  const totalHours = logs.reduce((sum, l) => sum + (l.workers||[]).reduce((s,w) => s+(parseFloat(w.hours)||0),0),0);
+
+  document.getElementById('pd-name').textContent = p.name;
+  document.getElementById('pd-sub').textContent = p.client ? `Client: ${p.client}` : '';
+
+  // Meta block
+  document.getElementById('pd-project-meta').innerHTML = `
+    <div class="pm-item"><div class="pm-label">Client</div><div class="pm-val">${esc(p.client||'—')}</div></div>
+    <div class="pm-item"><div class="pm-label">Site Address</div><div class="pm-val">${esc(p.address||'—')}</div></div>
+    <div class="pm-item"><div class="pm-label">Status</div><div class="pm-val">${statusBadge(p.status)}</div></div>
+    <div class="pm-item"><div class="pm-label">Created</div><div class="pm-val">${formatDate(p.createdAt)}</div></div>
+  `;
+
+  // Chips — no "needs review" at project level; that detail lives inside each log
   document.getElementById('pd-chips').innerHTML = `
-    <div class="chip"><div class="chip-val">${logs.length}</div><div class="chip-label">Total logs</div></div>
-    <div class="chip"><div class="chip-val">${totalHrs % 1 === 0 ? totalHrs : totalHrs.toFixed(1)}</div><div class="chip-label">Total hours</div></div>
-    <div class="chip ${needsReview > 0 ? 'chip-alert' : ''}">
-      <div class="chip-val">${needsReview}</div>
-      <div class="chip-label">Need review</div>
-    </div>`;
+    <div class="chip chip-blue"><div class="chip-val">${logs.length}</div><div class="chip-lbl">Total Logs</div></div>
+    <div class="chip"><div class="chip-val">${totalHours.toFixed(1)}</div><div class="chip-lbl">Total Hours</div></div>
+  `;
 
+  // Logs table
   const tbody = document.getElementById('pd-logs-body');
-  const emptyEl = document.getElementById('pd-logs-empty');
-  tbody.innerHTML = '';
-  if (!logs.length) {
-    emptyEl.classList.remove('hidden');
-    document.querySelector('#pd-logs-body').closest('.table-wrap').style.display = 'none';
-    return;
+  const empty = document.getElementById('pd-empty');
+  const tableWrap = document.getElementById('pd-logs-wrap');
+
+  if (logs.length === 0) {
+    tableWrap.style.display = 'none';
+    empty.style.display = 'block';
+  } else {
+    tableWrap.style.display = 'block';
+    empty.style.display = 'none';
+    tbody.innerHTML = logs.slice().reverse().map(l => {
+      const hrs = (l.workers||[]).reduce((s,w)=>s+(parseFloat(w.hours)||0),0);
+      const reviewCount = (l.workers||[]).filter(w=>w.needsReview).length;
+      return `
+        <tr>
+          <td>${l.date || '—'}</td>
+          <td>${esc(l.foreman||'—')}</td>
+          <td>${esc(l.site||'—')}</td>
+          <td style="font-family:var(--font-mono)">${(l.workers||[]).length}</td>
+          <td style="font-family:var(--font-mono)">${hrs.toFixed(1)}</td>
+          <td>${legibilityBadge(l.legibility)}</td>
+          <td>${l.signed ? '<span style="color:var(--green)">✓</span>' : '<span style="color:var(--ink-faint)">—</span>'}</td>
+          <td><button class="btn btn-secondary btn-sm" onclick="showLogDetail('${l.id}')">View</button></td>
+        </tr>`;
+    }).join('');
   }
-  emptyEl.classList.add('hidden');
-  document.querySelector('#pd-logs-body').closest('.table-wrap').style.display = '';
-  logs.slice().sort((a, b) => (b.date||'').localeCompare(a.date||'')).forEach(log => {
-    const workers = log.workers || [];
-    const hrs = workers.reduce((s, w) => s + (parseFloat(w.hours)||0), 0);
-    const tr = document.createElement('tr');
-    tr.className = 'clickable';
-    tr.onclick = () => showLogDetail(log.id);
-    tr.innerHTML = `
-      <td>${formatDate(log.date)}</td>
-      <td>${esc(log.foreman||'—')}</td>
-      <td>${esc(log.site||'—')}</td>
-      <td>${workers.length}</td>
-      <td>${hrs % 1 === 0 ? hrs : hrs.toFixed(1)}</td>
-      <td>${legBadge(log.legibility)}</td>
-      <td>${log.signed ? '✓' : '—'}</td>`;
-    tbody.appendChild(tr);
-  });
+
+  showView('project-detail');
 }
 
-// ═══════════════════════════════════════════════════════════
-//  EXPORT CSV
-// ═══════════════════════════════════════════════════════════
-function exportProjectCSV() {
-  const logs = getLogs().filter(l => l.projectId === currentProjectId);
-  const rows = [['Log Date','Foreman','Site','Worker Name','Start Time','End Time','Hours','Needs Review']];
-  logs.forEach(log => {
-    (log.workers||[]).forEach(w => {
-      rows.push([log.date||'',log.foreman||'',log.site||'',w.name||'',
-        w.startTime||'',w.endTime||'',w.hours||'',w.needsReview?'Yes':'No']);
-    });
-  });
-  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const proj = getProjects().find(p => p.id === currentProjectId);
-  const fname = `${(proj?.name||'project').replace(/[^a-z0-9]/gi,'_')}_labor_logs.csv`;
-  downloadText(csv, fname, 'text/csv');
-}
+// ══════════════════════════════════════════════════════
+// UPLOAD & EXTRACT VIEW
+// ══════════════════════════════════════════════════════
 
-function downloadText(text, filename, type) {
-  const blob = new Blob([text], { type });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = filename; a.click();
-  URL.revokeObjectURL(url);
-}
-
-// ═══════════════════════════════════════════════════════════
-//  UPLOAD VIEW
-// ═══════════════════════════════════════════════════════════
-function resetUploadView() {
-  selectedFile = null;
+function goToUpload() {
+  // Reset state
+  selectedImageBase64 = null;
   document.getElementById('file-input').value = '';
-  document.getElementById('img-preview').style.display = 'none';
-  document.getElementById('review-section').classList.add('hidden');
-  document.getElementById('extract-alert').classList.add('hidden');
-  document.getElementById('extract-spinner').classList.add('hidden');
-  document.getElementById('rv-workers-body').innerHTML = '';
-  document.getElementById('rv-summary').innerHTML = '';
-  document.getElementById('key-saved-msg').classList.add('hidden');
+  document.getElementById('preview-img').style.display = 'none';
+  document.getElementById('upload-zone').classList.remove('has-image');
+  document.getElementById('upload-zone').querySelector('.upload-icon').style.display = '';
+  document.getElementById('upload-zone').querySelector('h4').style.display = '';
+  document.getElementById('upload-zone').querySelector('p').style.display = '';
+  document.getElementById('extract-spinner').style.display = 'none';
+  document.getElementById('extract-error').style.display = 'none';
+  document.getElementById('review-section').style.display = 'none';
+  document.getElementById('rev-workers-body').innerHTML = '';
+
+  // Pre-fill API key
+  const saved = localStorage.getItem(LS_API_KEY) || '';
+  document.getElementById('api-key-input').value = saved;
+
+  const projects = getProjects();
+  const p = projects.find(x => x.id === currentProjectId);
+  document.getElementById('upload-project-name').textContent = p ? p.name : '';
+
+  checkExtractReady();
+  showView('upload');
 }
 
-function handleFileSelect(event) {
-  const file = event.target.files[0];
+function handleFileSelect(e) {
+  const file = e.target.files[0];
   if (!file) return;
-  selectedFile = file;
-  const preview = document.getElementById('img-preview');
-  preview.src = URL.createObjectURL(file);
-  preview.style.display = 'block';
-  updateExtractButton();
+  selectedImageType = file.type || 'image/jpeg';
+
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const dataUrl = ev.target.result;
+    selectedImageBase64 = dataUrl.split(',')[1];
+
+    const img = document.getElementById('preview-img');
+    img.src = dataUrl;
+    img.style.display = 'block';
+
+    const zone = document.getElementById('upload-zone');
+    zone.classList.add('has-image');
+    zone.querySelector('.upload-icon').style.display = 'none';
+    zone.querySelector('h4').style.display = 'none';
+    zone.querySelector('p').style.display = 'none';
+
+    checkExtractReady();
+  };
+  reader.readAsDataURL(file);
 }
 
-function updateExtractButton() {
-  const apiKey = document.getElementById('api-key-input').value.trim();
-  document.getElementById('extract-btn').disabled = !(selectedFile && apiKey);
+function checkExtractReady() {
+  const hasImg = !!selectedImageBase64;
+  const hasKey = document.getElementById('api-key-input').value.trim().length > 10;
+  document.getElementById('extract-btn').disabled = !(hasImg && hasKey);
+}
+
+function toggleKeyVisibility() {
+  const inp = document.getElementById('api-key-input');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
 }
 
 function saveApiKey() {
-  const key = document.getElementById('api-key-input').value.trim();
-  if (!key) return;
-  localStorage.setItem(KEY_APIKEY, key);
-  const msg = document.getElementById('key-saved-msg');
-  msg.classList.remove('hidden');
-  updateExtractButton();
+  const val = document.getElementById('api-key-input').value.trim();
+  if (val) { localStorage.setItem(LS_API_KEY, val); showToast('API key saved.'); }
 }
 
-// ═══════════════════════════════════════════════════════════
-//  AI EXTRACTION
-// ═══════════════════════════════════════════════════════════
 async function extractData() {
   const apiKey = document.getElementById('api-key-input').value.trim();
-  if (!selectedFile || !apiKey) return;
+  if (!apiKey || !selectedImageBase64) return;
 
-  // Auto-save key
-  localStorage.setItem(KEY_APIKEY, apiKey);
-  document.getElementById('key-saved-msg').classList.remove('hidden');
+  // Save key
+  localStorage.setItem(LS_API_KEY, apiKey);
 
-  const alertEl = document.getElementById('extract-alert');
-  const spinner = document.getElementById('extract-spinner');
-  const btn = document.getElementById('extract-btn');
-  alertEl.classList.add('hidden');
-  spinner.classList.remove('hidden');
-  btn.disabled = true;
+  document.getElementById('extract-btn').disabled = true;
+  document.getElementById('extract-spinner').style.display = 'block';
+  document.getElementById('extract-error').style.display = 'none';
+  document.getElementById('review-section').style.display = 'none';
 
   try {
-    const base64 = await fileToBase64(selectedFile);
-    const mimeType = selectedFile.type || 'image/jpeg';
-    const model = 'gemini-2.0-flash';
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-    const prompt = `You are an expert at reading handwritten and printed paper labor logs from construction sites. Extract all data from the image and return ONLY valid JSON — no markdown, no explanation. Schema: { "date": "string or null", "foreman": "string or null", "site": "string or null", "signed": true or false, "overall_legibility": "good" or "partial" or "poor", "ai_notes": "string", "workers": [ { "name": "string", "start_time": "string or null", "end_time": "string or null", "hours": number or null, "needs_review": true or false } ] }. Set needs_review: true for any row that was unclear or required a guess.`;
+    const mediaType = selectedImageType.startsWith('image/') ? selectedImageType : 'image/jpeg';
 
-    const response = await fetch(url, {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
       body: JSON.stringify({
-        contents: [{
-          parts: [
-            { text: prompt },
-            { inline_data: { mime_type: mimeType, data: base64 } }
+        model: 'claude-sonnet-4-6',
+        max_tokens: 1000,
+        system: `You are an expert at reading handwritten and printed paper labor logs from construction sites. Extract all data from the image and return ONLY valid JSON — no markdown, no explanation. Schema: { "date": "string or null", "foreman": "string or null", "site": "string or null", "signed": true or false, "overall_legibility": "good" or "partial" or "poor", "ai_notes": "string", "workers": [ { "name": "string", "start_time": "string or null", "end_time": "string or null", "hours": number or null, "needs_review": true or false } ] }. Set needs_review: true for any row that was unclear or required a guess.`,
+        messages: [{
+          role: 'user',
+          content: [
+            { type: 'image', source: { type: 'base64', media_type: mediaType, data: selectedImageBase64 } },
+            { type: 'text', text: 'Extract all labor log data from this image.' }
           ]
-        }],
-        generationConfig: { temperature: 0 }
+        }]
       })
     });
 
     if (!response.ok) {
-      const errData = await response.json().catch(() => ({}));
-      throw new Error(errData?.error?.message || `API error ${response.status}`);
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error?.message || `API error ${response.status}`);
     }
 
     const data = await response.json();
-    const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    const clean = rawText.replace(/```json|```/g, '').trim();
-    const extracted = JSON.parse(clean);
+    let rawText = data.content[0].text;
+
+    // Strip possible markdown fences
+    rawText = rawText.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim();
+
+    const extracted = JSON.parse(rawText);
     populateReviewForm(extracted);
-    document.getElementById('review-section').classList.remove('hidden');
+    document.getElementById('review-section').style.display = 'block';
     document.getElementById('review-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   } catch (err) {
-    alertEl.textContent = '⚠ Extraction failed: ' + err.message;
-    alertEl.classList.remove('hidden');
+    const errEl = document.getElementById('extract-error');
+    errEl.textContent = 'Extraction failed: ' + err.message;
+    errEl.style.display = 'block';
   } finally {
-    spinner.classList.add('hidden');
-    btn.disabled = false;
+    document.getElementById('extract-spinner').style.display = 'none';
+    document.getElementById('extract-btn').disabled = false;
+    checkExtractReady();
   }
 }
 
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result.split(',')[1]);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-// ═══════════════════════════════════════════════════════════
-//  REVIEW FORM
-// ═══════════════════════════════════════════════════════════
 function populateReviewForm(extracted) {
-  document.getElementById('rv-date').value = extracted.date || '';
-  document.getElementById('rv-foreman').value = extracted.foreman || '';
-  document.getElementById('rv-site').value = extracted.site || '';
-  document.getElementById('rv-signed').checked = !!extracted.signed;
-  document.getElementById('review-legibility').innerHTML = legBadge(extracted.overall_legibility || 'partial');
-  document.getElementById('rv-ai-notes').textContent = extracted.ai_notes || '—';
+  // Date: try to normalize to YYYY-MM-DD
+  let dateVal = '';
+  if (extracted.date) {
+    const d = new Date(extracted.date);
+    if (!isNaN(d)) {
+      dateVal = d.toISOString().split('T')[0];
+    } else {
+      dateVal = extracted.date;
+    }
+  }
+  document.getElementById('rev-date').value = dateVal;
+  document.getElementById('rev-foreman').value = extracted.foreman || '';
+  document.getElementById('rev-site').value = extracted.site || '';
+  document.getElementById('rev-signed').checked = !!extracted.signed;
 
-  const tbody = document.getElementById('rv-workers-body');
+  const leg = (extracted.overall_legibility || 'unknown').toLowerCase();
+  const legEl = document.getElementById('rev-legibility');
+  legEl.value = leg.charAt(0).toUpperCase() + leg.slice(1);
+
+  const notesCard = document.getElementById('ai-notes-card');
+  const notesEl = document.getElementById('rev-ai-notes');
+  if (extracted.ai_notes) {
+    notesEl.innerHTML = `<strong>AI Notes</strong>${esc(extracted.ai_notes)}`;
+    notesCard.style.display = 'block';
+  } else {
+    notesCard.style.display = 'none';
+  }
+
+  const tbody = document.getElementById('rev-workers-body');
   tbody.innerHTML = '';
-  (extracted.workers || []).forEach(w => appendWorkerRow('rv', w));
-  updateReviewSummary();
+  (extracted.workers || []).forEach(w => {
+    appendWorkerRow(tbody, w);
+  });
+
+  updateWorkerSummary('rev-workers-body', 'rev-summary');
 }
 
-function appendWorkerRow(scope, w = {}) {
-  const tbody = document.getElementById(`${scope}-workers-body`);
-  const rowId = uid();
+function addWorkerRow(tbodyId) {
+  const tbody = document.getElementById(tbodyId);
+  appendWorkerRow(tbody, { name:'', start_time:'', end_time:'', hours:null, needs_review:false });
+  const summaryId = tbodyId === 'rev-workers-body' ? 'rev-summary' : 'ld-summary';
+  updateWorkerSummary(tbodyId, summaryId);
+}
+
+function appendWorkerRow(tbody, w) {
   const tr = document.createElement('tr');
-  if (w.needs_review || w.needsReview) tr.classList.add('needs-review');
-  tr.dataset.rowId = rowId;
+  if (w.needs_review) tr.classList.add('tr-review');
+  tr.dataset.needsReview = w.needs_review ? '1' : '0';
+
   tr.innerHTML = `
-    <td><span class="status-dot ${(w.needs_review||w.needsReview) ? 'warn' : 'ok'}"></span></td>
-    <td><input type="text" value="${esc(w.name||'')}" placeholder="Name" onchange="updateRowReview(this)"></td>
-    <td><input type="text" value="${esc(w.start_time||w.startTime||'')}" placeholder="e.g. 7:00"></td>
-    <td><input type="text" value="${esc(w.end_time||w.endTime||'')}" placeholder="e.g. 15:30"></td>
-    <td><input type="number" value="${w.hours!=null?w.hours:''}" placeholder="hrs" step="0.25" min="0" onchange="${scope==='rv'?'updateReviewSummary()':'updateLogDetailSummary()'}"></td>
     <td>
-      <button class="btn btn-icon btn-danger" title="Remove row" onclick="removeWorkerRow(this,'${scope}')">✕</button>
+      <span class="dot ${w.needs_review ? 'dot-amber' : 'dot-green'}"></span>
+    </td>
+    <td><input class="cell-input cell-input-name" type="text" value="${esc(w.name||'')}" placeholder="Name" oninput="updateDot(this)"></td>
+    <td><input class="cell-input" type="text" value="${esc(w.start_time||'')}" placeholder="07:00" style="max-width:80px" onblur="recalcHours(this)"></td>
+    <td><input class="cell-input" type="text" value="${esc(w.end_time||'')}" placeholder="15:30" style="max-width:80px" onblur="recalcHours(this)"></td>
+    <td><input class="cell-input" type="number" min="0" max="24" step="0.25" value="${w.hours !== null && w.hours !== undefined ? w.hours : ''}" placeholder="—" style="max-width:70px" oninput="onHoursInput(this)"></td>
+    <td>
+      <button class="delete-row-btn" onclick="deleteWorkerRow(this)" title="Remove row">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
     </td>`;
+
   tbody.appendChild(tr);
 }
 
-function addWorkerRow() { appendWorkerRow('rv', {}); updateReviewSummary(); }
-function addLogDetailWorkerRow() { appendWorkerRow('ld', {}); updateLogDetailSummary(); }
-
-function removeWorkerRow(btn, scope) {
-  btn.closest('tr').remove();
-  if (scope === 'rv') updateReviewSummary();
-  else updateLogDetailSummary();
+function deleteWorkerRow(btn) {
+  const tr = btn.closest('tr');
+  const tbody = tr.parentElement;
+  const summaryId = tbody.id === 'rev-workers-body' ? 'rev-summary' : 'ld-summary';
+  tr.remove();
+  updateWorkerSummary(tbody.id, summaryId);
 }
 
-function updateRowReview(input) {
-  // nothing auto-changes review status on name edit — keep existing dot
+function recalcHours(inp) {
+  const tr = inp.closest('tr');
+  const cells = tr.querySelectorAll('input.cell-input');
+  // cells order: name, start, end, hours
+  const startVal = cells[1].value.trim();
+  const endVal   = cells[2].value.trim();
+  if (startVal && endVal) {
+    const start = parseTime(startVal);
+    const end   = parseTime(endVal);
+    if (start !== null && end !== null && end >= start) {
+      const hrs = (end - start) / 60;
+      cells[3].value = hrs.toFixed(2);
+    }
+  }
+  const tbody = tr.parentElement;
+  const summaryId = tbody.id === 'rev-workers-body' ? 'rev-summary' : 'ld-summary';
+  updateWorkerSummary(tbody.id, summaryId);
 }
 
-function updateReviewSummary() {
-  const rows = document.querySelectorAll('#rv-workers-body tr');
-  let totalHrs = 0, needsReview = 0;
+function onHoursInput(inp) {
+  const tr = inp.closest('tr');
+  const tbody = tr.parentElement;
+  const summaryId = tbody.id === 'rev-workers-body' ? 'rev-summary' : 'ld-summary';
+  updateWorkerSummary(tbody.id, summaryId);
+}
+
+function updateDot(inp) {
+  // Optionally mark as needing review if name cleared
+}
+
+function parseTime(str) {
+  // supports "7:30", "07:30", "730", "7", "07", "7:30 AM"
+  str = str.toUpperCase().replace(/\s/g,'');
+  let h, m = 0;
+  const ampm = str.endsWith('AM') || str.endsWith('PM');
+  if (ampm) {
+    const isPM = str.endsWith('PM');
+    str = str.replace('AM','').replace('PM','');
+    if (str.includes(':')) { [h,m] = str.split(':').map(Number); }
+    else if (str.length <= 2) { h = Number(str); }
+    else { h = Number(str.slice(0,-2)); m = Number(str.slice(-2)); }
+    if (isPM && h !== 12) h += 12;
+    if (!isPM && h === 12) h = 0;
+  } else {
+    if (str.includes(':')) { [h,m] = str.split(':').map(Number); }
+    else if (str.length <= 2) { h = Number(str); }
+    else if (str.length === 3) { h = Number(str[0]); m = Number(str.slice(1)); }
+    else { h = Number(str.slice(0,-2)); m = Number(str.slice(-2)); }
+  }
+  if (isNaN(h) || isNaN(m)) return null;
+  return h * 60 + m;
+}
+
+function updateWorkerSummary(tbodyId, summaryId) {
+  const tbody = document.getElementById(tbodyId);
+  const rows = Array.from(tbody.querySelectorAll('tr'));
+  let totalHrs = 0, reviewCount = 0;
   rows.forEach(tr => {
-    const hrs = parseFloat(tr.querySelectorAll('input')[3]?.value) || 0;
-    totalHrs += hrs;
-    if (tr.classList.contains('needs-review')) needsReview++;
+    const hrsInp = tr.querySelectorAll('input.cell-input')[3];
+    if (hrsInp) totalHrs += parseFloat(hrsInp.value) || 0;
+    if (tr.dataset.needsReview === '1') reviewCount++;
   });
-  document.getElementById('rv-summary').innerHTML =
-    `<span><strong>${rows.length}</strong> workers</span>
-     <span><strong>${totalHrs % 1 === 0 ? totalHrs : totalHrs.toFixed(1)}</strong> total hours</span>
-     ${needsReview > 0 ? `<span style="color:var(--c-amber)"><strong>${needsReview}</strong> needing review</span>` : ''}`;
+  const summaryEl = document.getElementById(summaryId);
+  summaryEl.innerHTML = `<strong>${rows.length}</strong> workers &nbsp;·&nbsp; <strong>${totalHrs.toFixed(2)}</strong> total hrs ${reviewCount > 0 ? `&nbsp;·&nbsp; <span style="color:var(--amber)"><strong>${reviewCount}</strong> need review</span>` : ''}`;
 }
 
-function updateLogDetailSummary() {
-  const rows = document.querySelectorAll('#ld-workers-body tr');
-  let totalHrs = 0, needsReview = 0;
-  rows.forEach(tr => {
-    const hrs = parseFloat(tr.querySelectorAll('input')[3]?.value) || 0;
-    totalHrs += hrs;
-    if (tr.classList.contains('needs-review')) needsReview++;
-  });
-  document.getElementById('ld-summary').innerHTML =
-    `<span><strong>${rows.length}</strong> workers</span>
-     <span><strong>${totalHrs % 1 === 0 ? totalHrs : totalHrs.toFixed(1)}</strong> total hours</span>
-     ${needsReview > 0 ? `<span style="color:var(--c-amber)"><strong>${needsReview}</strong> needing review</span>` : ''}`;
-}
-
-// ═══════════════════════════════════════════════════════════
-//  SAVE LOG (from upload/review)
-// ═══════════════════════════════════════════════════════════
-function collectWorkerRows(scope) {
-  const rows = document.querySelectorAll(`#${scope}-workers-body tr`);
-  return Array.from(rows).map(tr => {
-    const inputs = tr.querySelectorAll('input');
+function getWorkersFromBody(tbodyId) {
+  const tbody = document.getElementById(tbodyId);
+  return Array.from(tbody.querySelectorAll('tr')).map(tr => {
+    const inputs = tr.querySelectorAll('input.cell-input');
     return {
       id: uid(),
-      name: inputs[0].value.trim(),
-      startTime: inputs[1].value.trim(),
-      endTime: inputs[2].value.trim(),
-      hours: inputs[3].value !== '' ? parseFloat(inputs[3].value) : null,
-      needsReview: tr.classList.contains('needs-review')
+      name: inputs[0]?.value.trim() || '',
+      startTime: inputs[1]?.value.trim() || '',
+      endTime: inputs[2]?.value.trim() || '',
+      hours: parseFloat(inputs[3]?.value) || null,
+      needsReview: tr.dataset.needsReview === '1'
     };
   });
 }
 
 function saveLog() {
-  const legEl = document.getElementById('review-legibility').querySelector('.badge');
-  let legibility = 'partial';
-  if (legEl) {
-    if (legEl.classList.contains('badge-good')) legibility = 'good';
-    else if (legEl.classList.contains('badge-poor')) legibility = 'poor';
-  }
+  const workers = getWorkersFromBody('rev-workers-body');
+  const legRaw = document.getElementById('rev-legibility').value.toLowerCase();
   const log = {
     id: uid(),
     projectId: currentProjectId,
-    date: document.getElementById('rv-date').value,
-    foreman: document.getElementById('rv-foreman').value.trim(),
-    site: document.getElementById('rv-site').value.trim(),
-    signed: document.getElementById('rv-signed').checked,
-    legibility,
-    aiNotes: document.getElementById('rv-ai-notes').textContent,
+    date: document.getElementById('rev-date').value,
+    foreman: document.getElementById('rev-foreman').value.trim(),
+    site: document.getElementById('rev-site').value.trim(),
+    signed: document.getElementById('rev-signed').checked,
+    legibility: legRaw,
+    aiNotes: document.getElementById('rev-ai-notes').textContent.replace(/^AI Notes/,'').trim(),
     createdAt: new Date().toISOString(),
-    workers: collectWorkerRows('rv')
+    imageData: selectedImageBase64 ? `data:${selectedImageType || 'image/jpeg'};base64,${selectedImageBase64}` : null,
+    workers
   };
+
   const logs = getLogs();
   logs.push(log);
   saveLogs(logs);
-  showProject();
+  showProjectDetail(currentProjectId);
 }
 
-// ═══════════════════════════════════════════════════════════
-//  LOG DETAIL
-// ═══════════════════════════════════════════════════════════
-function renderLogDetail() {
-  const log = getLogs().find(l => l.id === currentLogId);
-  if (!log) return showProject();
+function cancelUpload() {
+  showProjectDetail(currentProjectId);
+}
 
-  document.getElementById('ld-title').textContent = `Log — ${formatDate(log.date)}`;
-  document.getElementById('ld-sub').textContent = `${log.foreman||'No foreman'} · ${log.site||'No site'}`;
-  document.getElementById('ld-ai-notes').textContent = log.aiNotes || '—';
+// ══════════════════════════════════════════════════════
+// LOG DETAIL VIEW
+// ══════════════════════════════════════════════════════
+
+function showLogDetail(logId) {
+  currentLogId = logId;
+  const logs = getLogs();
+  const log = logs.find(l => l.id === logId);
+  if (!log) { showProjectDetail(currentProjectId); return; }
+
+  document.getElementById('ld-title').textContent = log.date ? `Log — ${log.date}` : 'Labor Log';
+  document.getElementById('ld-sub').textContent = log.foreman ? `Foreman: ${log.foreman}` : '';
+
+  // Photo button — only show if we have a stored image
+  const photoBtn = document.getElementById('ld-view-photo-btn');
+  const photoPanel = document.getElementById('ld-photo-panel');
+  const photoImg = document.getElementById('ld-photo-img');
+  if (log.imageData) {
+    photoBtn.style.display = '';
+    photoImg.src = log.imageData;
+    photoPanel.style.display = 'none'; // collapsed by default
+    photoBtn.textContent = ''; // reset label
+    photoBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> View Photo`;
+  } else {
+    photoBtn.style.display = 'none';
+    photoPanel.style.display = 'none';
+  }
+
+  // Needs-review count — shown only inside this log
+  const reviewCount = (log.workers||[]).filter(w=>w.needsReview).length;
 
   document.getElementById('ld-meta').innerHTML = `
-    <div class="meta-item"><span class="meta-key">Date</span><span>${formatDate(log.date)}</span></div>
-    <div class="meta-item"><span class="meta-key">Foreman</span><span>${esc(log.foreman||'—')}</span></div>
-    <div class="meta-item"><span class="meta-key">Site</span><span>${esc(log.site||'—')}</span></div>
-    <div class="meta-item"><span class="meta-key">Legibility</span><span>${legBadge(log.legibility)}</span></div>
-    <div class="meta-item"><span class="meta-key">Signed</span><span>${log.signed ? '✓ Yes' : '— No'}</span></div>`;
+    <div class="log-meta-item"><div class="lm-label">Date</div><div class="lm-val">${log.date || '—'}</div></div>
+    <div class="log-meta-item"><div class="lm-label">Foreman</div><div class="lm-val">${esc(log.foreman||'—')}</div></div>
+    <div class="log-meta-item"><div class="lm-label">Site</div><div class="lm-val">${esc(log.site||'—')}</div></div>
+    <div class="log-meta-item"><div class="lm-label">Legibility</div><div class="lm-val">${legibilityBadge(log.legibility)}</div></div>
+    <div class="log-meta-item"><div class="lm-label">Signed</div><div class="lm-val">${log.signed ? '<span style="color:var(--green);font-weight:600">✓ Yes</span>' : '<span style="color:var(--ink-faint)">No</span>'}</div></div>
+    ${reviewCount > 0 ? `<div class="log-meta-item"><div class="lm-label">Needs Review</div><div class="lm-val"><span class="badge badge-amber">${reviewCount} entr${reviewCount === 1 ? 'y' : 'ies'}</span></div></div>` : ''}
+    <div class="log-meta-item"><div class="lm-label">Created</div><div class="lm-val">${formatDate(log.createdAt)}</div></div>
+  `;
+
+  const aiEl = document.getElementById('ld-ai-notes');
+  if (log.aiNotes) {
+    aiEl.innerHTML = `<strong>AI Notes</strong>${esc(log.aiNotes)}`;
+    aiEl.style.display = 'block';
+  } else {
+    aiEl.style.display = 'none';
+  }
 
   const tbody = document.getElementById('ld-workers-body');
   tbody.innerHTML = '';
-  (log.workers||[]).forEach(w => appendWorkerRow('ld', {
-    name: w.name, start_time: w.startTime, end_time: w.endTime,
-    hours: w.hours, needs_review: w.needsReview
-  }));
-  updateLogDetailSummary();
+  (log.workers || []).forEach(w => {
+    appendWorkerRow(tbody, { name: w.name, start_time: w.startTime, end_time: w.endTime, hours: w.hours, needs_review: w.needsReview });
+  });
+  updateWorkerSummary('ld-workers-body', 'ld-summary');
+  document.getElementById('ld-save-success').style.display = 'none';
+
+  showView('log-detail');
 }
 
-function saveLogChanges() {
+function toggleLogPhoto() {
+  const panel = document.getElementById('ld-photo-panel');
+  const btn = document.getElementById('ld-view-photo-btn');
+  const isHidden = panel.style.display === 'none';
+  panel.style.display = isHidden ? 'block' : 'none';
+  btn.innerHTML = isHidden
+    ? `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg> Hide Photo`
+    : `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> View Photo`;
+  if (isHidden) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function saveLogEdits() {
   const logs = getLogs();
   const idx = logs.findIndex(l => l.id === currentLogId);
   if (idx === -1) return;
-  logs[idx].workers = collectWorkerRows('ld');
+
+  logs[idx].workers = getWorkersFromBody('ld-workers-body');
   saveLogs(logs);
-  // Show brief success then go back
-  showProject();
+
+  const ok = document.getElementById('ld-save-success');
+  ok.style.display = 'block';
+  setTimeout(() => ok.style.display = 'none', 2500);
 }
 
 function deleteLog() {
   if (!confirm('Delete this log? This cannot be undone.')) return;
-  const logs = getLogs().filter(l => l.id !== currentLogId);
+  let logs = getLogs();
+  logs = logs.filter(l => l.id !== currentLogId);
   saveLogs(logs);
-  currentLogId = null;
-  showProject();
+  showProjectDetail(currentProjectId);
 }
 
-// ═══════════════════════════════════════════════════════════
-//  UTILITIES
-// ═══════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
+// EXPORT CSV
+// ══════════════════════════════════════════════════════
+
+function exportCSV() {
+  const logs = getLogs().filter(l => l.projectId === currentProjectId);
+  if (logs.length === 0) { alert('No logs to export.'); return; }
+
+  const rows = [['Log Date','Foreman','Site','Worker Name','Start Time','End Time','Hours','Needs Review']];
+  logs.forEach(l => {
+    (l.workers||[]).forEach(w => {
+      rows.push([l.date||'', l.foreman||'', l.site||'', w.name||'', w.startTime||'', w.endTime||'', w.hours||'', w.needsReview ? 'Yes':'No']);
+    });
+  });
+
+  const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const projects = getProjects();
+  const p = projects.find(x => x.id === currentProjectId);
+  a.download = `${(p?.name||'project').replace(/\s+/g,'_')}_labor_logs.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ══════════════════════════════════════════════════════
+// Helpers
+// ══════════════════════════════════════════════════════
+
 function esc(str) {
   return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function formatDate(dateStr) {
-  if (!dateStr) return '—';
-  try {
-    // Parse as local date to avoid timezone shift
-    const [y, m, d] = dateStr.split('-').map(Number);
-    if (!y) return dateStr;
-    return new Date(y, m-1, d).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
-  } catch {
-    return dateStr;
-  }
+function statusBadge(status) {
+  const map = { 'Active':'badge-blue', 'On Hold':'badge-gray', 'Completed':'badge-green' };
+  return `<span class="badge ${map[status]||'badge-gray'}">${esc(status||'—')}</span>`;
 }
 
-// ═══════════════════════════════════════════════════════════
-//  INIT
-// ═══════════════════════════════════════════════════════════
-showProjects();
+function legibilityBadge(leg) {
+  const l = (leg||'').toLowerCase();
+  if (l === 'good')    return `<span class="badge badge-green">Good</span>`;
+  if (l === 'partial') return `<span class="badge badge-amber">Partial</span>`;
+  if (l === 'poor')    return `<span class="badge badge-red">Poor</span>`;
+  return `<span class="badge badge-gray">${esc(leg||'—')}</span>`;
+}
+
+function formatDate(iso) {
+  if (!iso) return '—';
+  try { return new Date(iso).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric'}); }
+  catch { return iso; }
+}
+
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  Object.assign(t.style, {
+    position:'fixed', bottom:'24px', right:'24px', background:'#0F172A', color:'#fff',
+    padding:'10px 18px', borderRadius:'8px', fontSize:'.85rem', fontWeight:'600',
+    zIndex:'9999', boxShadow:'0 4px 16px rgba(0,0,0,.25)', opacity:'0', transition:'opacity .2s'
+  });
+  document.body.appendChild(t);
+  requestAnimationFrame(() => t.style.opacity = '1');
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 2200);
+}
+
+// ══════════════════════════════════════════════════════
+// Boot
+// ══════════════════════════════════════════════════════
+
+document.addEventListener('DOMContentLoaded', () => {
+  renderProjects();
+  showView('projects');
+});
 </script>
 </body>
 </html>
