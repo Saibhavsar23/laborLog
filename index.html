@@ -368,11 +368,28 @@
         </div>
         <div class="form-row">
           <div class="field"><label>Site / Location</label><input type="text" id="rev-site" placeholder="Site name or address"></div>
-          <div class="field"><label>Legibility</label><input type="text" id="rev-legibility" readonly style="background:var(--surface)"></div>
+          <div class="field"><label>Legibility</label>
+            <select id="rev-legibility">
+              <option value="Good">Good</option>
+              <option value="Partial">Partial</option>
+              <option value="Poor">Poor</option>
+            </select>
+          </div>
         </div>
         <div class="field checkbox-row">
           <input type="checkbox" id="rev-signed">
           <label for="rev-signed">Log is signed by foreman</label>
+        </div>
+      </div>
+      <div class="form-card">
+        <h3>Equipment &amp; Resources</h3>
+        <div class="form-row">
+          <div class="field"><label>Vehicles Used</label><input type="text" id="rev-vehicles" placeholder="e.g. F-250, box truck"></div>
+          <div class="field"><label>Number of Dollies</label><input type="number" id="rev-dollies" min="0" placeholder="0"></div>
+        </div>
+        <div class="form-row">
+          <div class="field"><label>Dumpster Size</label><input type="text" id="rev-dumpster" placeholder="e.g. 20 yard, none"></div>
+          <div class="field"><label>AI Notes</label><input type="text" id="rev-ai-notes-inline" placeholder="Notes from AI" style="background:var(--surface)"></div>
         </div>
       </div>
       <div class="form-card">
@@ -388,10 +405,7 @@
           </div>
         </div>
       </div>
-      <div class="form-card" id="ai-notes-card" style="display:none;">
-        <h3>AI Notes</h3>
-        <div class="ai-notes-block" id="rev-ai-notes"></div>
-      </div>
+
       <div class="form-actions" style="border-top:none;padding-top:0;margin-top:0;">
         <button class="btn btn-secondary" onclick="cancelUpload()">Cancel</button>
         <button class="btn btn-primary" id="save-log-btn" onclick="saveLog()">
@@ -432,8 +446,36 @@
       <h3>Original Log Photo</h3>
       <img id="ld-photo-img" alt="Original log photo" style="max-width:100%;max-height:480px;object-fit:contain;border-radius:var(--radius);display:block;margin:0 auto;">
     </div>
-    <div class="log-meta" id="ld-meta"></div>
-    <div id="ld-ai-notes" class="ai-notes-block" style="display:none;"></div>
+    <div class="form-card" id="ld-edit-card">
+      <h3>Log Details</h3>
+      <div class="form-row">
+        <div class="field"><label>Log Date</label><input type="date" id="ld-date"></div>
+        <div class="field"><label>Foreman Name</label><input type="text" id="ld-foreman" placeholder="Name"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Site / Location</label><input type="text" id="ld-site" placeholder="Site name or address"></div>
+        <div class="field"><label>Legibility</label>
+          <select id="ld-legibility">
+            <option value="good">Good</option>
+            <option value="partial">Partial</option>
+            <option value="poor">Poor</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Vehicles Used</label><input type="text" id="ld-vehicles" placeholder="e.g. F-250, box truck"></div>
+        <div class="field"><label>Number of Dollies</label><input type="number" id="ld-dollies" min="0" placeholder="0"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Dumpster Size</label><input type="text" id="ld-dumpster" placeholder="e.g. 20 yard, none"></div>
+        <div class="field"><label>AI Notes</label><input type="text" id="ld-ai-notes" placeholder="Notes"></div>
+      </div>
+      <div class="field checkbox-row" style="margin-top:4px;">
+        <input type="checkbox" id="ld-signed">
+        <label for="ld-signed">Log is signed by foreman</label>
+      </div>
+    </div>
+    <div class="log-meta" id="ld-meta" style="display:none;"></div>
     <div class="form-card">
       <h3>Worker Entries</h3>
       <div class="table-wrap" style="margin-bottom:0;">
@@ -720,7 +762,7 @@ window.extractData = async () => {
       headers: { 'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6', max_tokens: 1000,
-        system: `You are an expert at reading handwritten and printed paper labor logs from construction sites. Extract all data from the image and return ONLY valid JSON — no markdown, no explanation. Schema: { "date": "string or null", "foreman": "string or null", "site": "string or null", "signed": true or false, "overall_legibility": "good" or "partial" or "poor", "ai_notes": "string", "workers": [ { "name": "string", "start_time": "string or null", "end_time": "string or null", "hours": number or null, "needs_review": true or false } ] }. Set needs_review: true for any row that was unclear or required a guess.`,
+        system: `You are an expert at reading handwritten and printed paper labor logs from construction sites. Extract all data from the image and return ONLY valid JSON — no markdown, no explanation. Schema: { "date": "string or null", "foreman": "string or null", "site": "string or null", "signed": true or false, "overall_legibility": "good" or "partial" or "poor", "ai_notes": "string", "vehicles": "string or null", "num_dollies": number or null, "dumpster_size": "string or null", "workers": [ { "name": "string", "start_time": "string or null", "end_time": "string or null", "hours": number or null, "needs_review": true or false } ] }. Set needs_review: true for any row that was unclear or required a guess.`,
         messages: [{ role:'user', content:[
           { type:'image', source:{ type:'base64', media_type:mediaType, data:selectedImageBase64 } },
           { type:'text', text:'Extract all labor log data from this image.' }
@@ -747,16 +789,16 @@ window.extractData = async () => {
 function populateReviewForm(x) {
   let dv = '';
   if (x.date) { const d = new Date(x.date); dv = isNaN(d) ? x.date : d.toISOString().split('T')[0]; }
-  document.getElementById('rev-date').value    = dv;
-  document.getElementById('rev-foreman').value = x.foreman || '';
-  document.getElementById('rev-site').value    = x.site    || '';
-  document.getElementById('rev-signed').checked = !!x.signed;
+  document.getElementById('rev-date').value           = dv;
+  document.getElementById('rev-foreman').value        = x.foreman || '';
+  document.getElementById('rev-site').value           = x.site    || '';
+  document.getElementById('rev-signed').checked       = !!x.signed;
+  document.getElementById('rev-vehicles').value       = x.vehicles || '';
+  document.getElementById('rev-dollies').value        = x.num_dollies != null ? x.num_dollies : '';
+  document.getElementById('rev-dumpster').value       = x.dumpster_size || '';
+  document.getElementById('rev-ai-notes-inline').value = x.ai_notes || '';
   const leg = (x.overall_legibility||'unknown').toLowerCase();
   document.getElementById('rev-legibility').value = leg.charAt(0).toUpperCase()+leg.slice(1);
-  const nc = document.getElementById('ai-notes-card');
-  const ne = document.getElementById('rev-ai-notes');
-  if (x.ai_notes) { ne.innerHTML = '<strong>AI Notes</strong>'+esc(x.ai_notes); nc.style.display='block'; }
-  else nc.style.display = 'none';
   const tb = document.getElementById('rev-workers-body');
   tb.innerHTML = '';
   (x.workers||[]).forEach(w => appendWorkerRow(tb, w));
@@ -770,14 +812,17 @@ window.saveLog = async () => {
   try {
     const workers = getWorkersFromBody('rev-workers-body');
     const logData = {
-      projectId:  window.currentProjectId,
-      date:       document.getElementById('rev-date').value,
-      foreman:    document.getElementById('rev-foreman').value.trim(),
-      site:       document.getElementById('rev-site').value.trim(),
-      signed:     document.getElementById('rev-signed').checked,
-      legibility: document.getElementById('rev-legibility').value.toLowerCase(),
-      aiNotes:    document.getElementById('rev-ai-notes').textContent.replace(/^AI Notes/,'').trim(),
-      createdAt:  new Date().toISOString(),
+      projectId:   window.currentProjectId,
+      date:        document.getElementById('rev-date').value,
+      foreman:     document.getElementById('rev-foreman').value.trim(),
+      site:        document.getElementById('rev-site').value.trim(),
+      signed:      document.getElementById('rev-signed').checked,
+      legibility:  document.getElementById('rev-legibility').value.toLowerCase(),
+      aiNotes:     document.getElementById('rev-ai-notes-inline').value.trim(),
+      vehicles:    document.getElementById('rev-vehicles').value.trim(),
+      numDollies:  document.getElementById('rev-dollies').value !== '' ? Number(document.getElementById('rev-dollies').value) : null,
+      dumpsterSize: document.getElementById('rev-dumpster').value.trim(),
+      createdAt:   new Date().toISOString(),
       workers
     };
     const logRef = await addDoc(logsCol, logData);
@@ -818,19 +863,23 @@ window.showLogDetail = async logId => {
     }
   } catch(e) { /* no image for this log */ }
 
-  const rc = (log.workers||[]).filter(w=>w.needsReview).length;
-  document.getElementById('ld-meta').innerHTML = `
-    <div class="log-meta-item"><div class="lm-label">Date</div><div class="lm-val">${log.date||'&#8212;'}</div></div>
-    <div class="log-meta-item"><div class="lm-label">Foreman</div><div class="lm-val">${esc(log.foreman||'&#8212;')}</div></div>
-    <div class="log-meta-item"><div class="lm-label">Site</div><div class="lm-val">${esc(log.site||'&#8212;')}</div></div>
-    <div class="log-meta-item"><div class="lm-label">Legibility</div><div class="lm-val">${legibilityBadge(log.legibility)}</div></div>
-    <div class="log-meta-item"><div class="lm-label">Signed</div><div class="lm-val">${log.signed?'<span style="color:var(--green);font-weight:600">&#10003; Yes</span>':'<span style="color:var(--ink-faint)">No</span>'}</div></div>
-    ${rc?`<div class="log-meta-item"><div class="lm-label">Needs Review</div><div class="lm-val"><span class="badge badge-amber">${rc} entr${rc===1?'y':'ies'}</span></div></div>`:''}
-    <div class="log-meta-item"><div class="lm-label">Created</div><div class="lm-val">${formatDate(log.createdAt)}</div></div>`;
+  // Populate editable fields
+  document.getElementById('ld-date').value      = log.date || '';
+  document.getElementById('ld-foreman').value   = log.foreman || '';
+  document.getElementById('ld-site').value      = log.site || '';
+  document.getElementById('ld-signed').checked  = !!log.signed;
+  document.getElementById('ld-vehicles').value  = log.vehicles || '';
+  document.getElementById('ld-dollies').value   = log.numDollies != null ? log.numDollies : '';
+  document.getElementById('ld-dumpster').value  = log.dumpsterSize || '';
+  document.getElementById('ld-ai-notes').value  = log.aiNotes || '';
+  const legVal = (log.legibility||'good').toLowerCase();
+  document.getElementById('ld-legibility').value = legVal;
 
-  const aiEl = document.getElementById('ld-ai-notes');
-  if (log.aiNotes) { aiEl.innerHTML = '<strong>AI Notes</strong>'+esc(log.aiNotes); aiEl.style.display='block'; }
-  else aiEl.style.display = 'none';
+  // Show needs-review chip in sub-header if applicable
+  const rc = (log.workers||[]).filter(w=>w.needsReview).length;
+  document.getElementById('ld-sub').textContent = log.foreman
+    ? 'Foreman: ' + log.foreman + (rc ? '  ·  ' + rc + ' entr' + (rc===1?'y':'ies') + ' need review' : '')
+    : (rc ? rc + ' entr' + (rc===1?'y':'ies') + ' need review' : '');
 
   const tbody = document.getElementById('ld-workers-body');
   tbody.innerHTML = '';
@@ -854,7 +903,21 @@ window.toggleLogPhoto = () => {
 window.saveLogEdits = async () => {
   setSyncing();
   try {
-    await updateDoc(doc(db,'logs',window.currentLogId), { workers: getWorkersFromBody('ld-workers-body') });
+    await updateDoc(doc(db,'logs',window.currentLogId), {
+      date:         document.getElementById('ld-date').value,
+      foreman:      document.getElementById('ld-foreman').value.trim(),
+      site:         document.getElementById('ld-site').value.trim(),
+      signed:       document.getElementById('ld-signed').checked,
+      legibility:   document.getElementById('ld-legibility').value,
+      vehicles:     document.getElementById('ld-vehicles').value.trim(),
+      numDollies:   document.getElementById('ld-dollies').value !== '' ? Number(document.getElementById('ld-dollies').value) : null,
+      dumpsterSize: document.getElementById('ld-dumpster').value.trim(),
+      aiNotes:      document.getElementById('ld-ai-notes').value.trim(),
+      workers:      getWorkersFromBody('ld-workers-body')
+    });
+    // Refresh sub-header foreman name live
+    document.getElementById('ld-title').textContent = 'Log — ' + (document.getElementById('ld-date').value || 'Log');
+    document.getElementById('ld-sub').textContent   = document.getElementById('ld-foreman').value.trim() ? 'Foreman: ' + document.getElementById('ld-foreman').value.trim() : '';
     const ok = document.getElementById('ld-save-success');
     ok.style.display = 'block';
     setTimeout(() => ok.style.display = 'none', 2500);
@@ -877,9 +940,9 @@ window.deleteLog = async () => {
 window.exportCSV = () => {
   const logs = allLogs.filter(l => l.projectId === window.currentProjectId);
   if (!logs.length) { alert('No logs to export.'); return; }
-  const rows = [['Log Date','Foreman','Site','Worker Name','Start Time','End Time','Hours','Needs Review']];
+  const rows = [['Log Date','Foreman','Site','Vehicles','Dollies','Dumpster Size','Worker Name','Start Time','End Time','Hours','Needs Review']];
   logs.forEach(l => (l.workers||[]).forEach(w =>
-    rows.push([l.date||'',l.foreman||'',l.site||'',w.name||'',w.startTime||'',w.endTime||'',w.hours||'',w.needsReview?'Yes':'No'])
+    rows.push([l.date||'',l.foreman||'',l.site||'',l.vehicles||'',l.numDollies!=null?l.numDollies:'',l.dumpsterSize||'',w.name||'',w.startTime||'',w.endTime||'',w.hours||'',w.needsReview?'Yes':'No'])
   ));
   const csv  = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob([csv],{type:'text/csv'});
