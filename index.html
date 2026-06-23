@@ -25,7 +25,11 @@
   #app-header .logo-mark{width:32px;height:32px;background:var(--blue);border-radius:var(--radius);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
   #app-header .logo-mark svg{width:18px;height:18px;}
   #app-header h1{font-size:1rem;font-weight:700;letter-spacing:.01em;color:#fff;}
-  #app-header .sync-dot{margin-left:auto;width:8px;height:8px;border-radius:50%;background:#94A3B8;transition:background .3s;flex-shrink:0;}
+  #app-header .sync-dot{width:8px;height:8px;border-radius:50%;background:#94A3B8;transition:background .3s;flex-shrink:0;}
+  .drive-btn{margin-left:auto;display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.2);border-radius:6px;font-size:.78rem;font-weight:600;cursor:pointer;transition:background .15s;white-space:nowrap;}
+  .drive-btn:hover{background:rgba(255,255,255,.18);}
+  .drive-btn.connected{background:rgba(22,163,74,.25);border-color:rgba(22,163,74,.5);}
+  .drive-btn svg{flex-shrink:0;}
   #app-header .sync-dot.connected{background:var(--green);}
   #app-header .sync-dot.syncing{background:var(--amber);animation:pulse .8s infinite;}
   @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
@@ -208,6 +212,7 @@
     thead th,tbody td{padding:9px 10px;}
   }
 </style>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
@@ -226,6 +231,10 @@
     </svg>
   </div>
   <h1>Field Labor Logs</h1>
+  <button id="drive-btn" class="drive-btn" onclick="handleDriveButton()" title="Google Drive">
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+    <span id="drive-btn-label">Connect Drive</span>
+  </button>
   <div class="sync-dot" id="sync-dot" title="Database connection"></div>
 </header>
 
@@ -315,6 +324,14 @@
             <option value="Completed">Completed</option>
           </select>
         </div>
+      </div>
+      <div class="field">
+        <label>Google Drive Folder (for photo uploads)</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <select id="ep-drive-folder" style="flex:1;"><option value="">— No Drive folder —</option></select>
+          <button class="btn btn-secondary btn-sm" style="height:42px;white-space:nowrap;" onclick="refreshDriveFolders()" id="ep-refresh-folders">Load Folders</button>
+        </div>
+        <p style="font-size:.75rem;color:var(--ink-faint);margin-top:4px;" id="ep-drive-hint">Connect Google Drive (top right) to choose a folder.</p>
       </div>
       <div class="form-actions">
         <button class="btn btn-secondary" onclick="hideEditProjectForm()">Cancel</button>
@@ -537,6 +554,14 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db  = getFirestore(app);
 
+// ── Google Drive config ──────────────────────────────────
+// Paste the OAuth Client ID you create in Google Cloud Console here:
+const GOOGLE_CLIENT_ID = "918611231274-rf26kc1fb873vmepoofu9th64fhsv4ej.apps.googleusercontent.com";
+const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file";
+let driveTokenClient = null;
+let driveAccessToken = null;
+let driveFolderCache = [];   // [{id, name}]
+
 const projectsCol = collection(db, 'projects');
 const logsCol     = collection(db, 'logs');
 
@@ -662,6 +687,104 @@ window.deleteProject = async () => {
   } catch(e) { showToast('Error: ' + e.message); }
 };
 
+// ── Google Drive integration ──────────────────────────────
+function initDriveClient() {
+  if (driveTokenClient || typeof google === 'undefined' || !google.accounts) return;
+  driveTokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CLIENT_ID,
+    scope: DRIVE_SCOPE,
+    callback: (resp) => {
+      if (resp && resp.access_token) {
+        driveAccessToken = resp.access_token;
+        updateDriveButton(true);
+        showToast('Google Drive connected.');
+        // If the edit form is open, auto-load folders
+        if (document.getElementById('edit-project-form').style.display !== 'none') {
+          refreshDriveFolders();
+        }
+      }
+    }
+  });
+}
+
+window.handleDriveButton = () => {
+  if (GOOGLE_CLIENT_ID.startsWith('PASTE_')) {
+    showToast('Google Drive not configured yet — add your Client ID.');
+    return;
+  }
+  initDriveClient();
+  if (!driveTokenClient) { showToast('Drive library still loading, try again.'); return; }
+  // Always request a token (also used to re-auth when expired)
+  driveTokenClient.requestAccessToken({ prompt: driveAccessToken ? '' : 'consent' });
+};
+
+function updateDriveButton(connected) {
+  const btn = document.getElementById('drive-btn');
+  const lbl = document.getElementById('drive-btn-label');
+  if (connected) { btn.classList.add('connected'); lbl.textContent = 'Drive Connected'; }
+  else { btn.classList.remove('connected'); lbl.textContent = 'Connect Drive'; }
+}
+
+window.refreshDriveFolders = async () => {
+  const hint = document.getElementById('ep-drive-hint');
+  if (!driveAccessToken) {
+    hint.textContent = 'Connect Google Drive (top right) first, then load folders.';
+    window.handleDriveButton();
+    return;
+  }
+  hint.textContent = 'Loading folders from Drive...';
+  try {
+    // List folders the user can write to (most recent 200)
+    const q = encodeURIComponent("mimeType='application/vnd.google-apps.folder' and trashed=false");
+    const url = `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&pageSize=200&orderBy=name&supportsAllDrives=true&includeItemsFromAllDrives=true`;
+    const res = await fetch(url, { headers: { Authorization: 'Bearer ' + driveAccessToken } });
+    if (res.status === 401) { driveAccessToken = null; updateDriveButton(false); hint.textContent='Drive session expired — reconnect.'; return; }
+    if (!res.ok) throw new Error('Drive API error ' + res.status);
+    const data = await res.json();
+    driveFolderCache = data.files || [];
+    populateFolderDropdown();
+    hint.textContent = driveFolderCache.length + ' folders loaded. Pick one for this project.';
+  } catch(e) {
+    hint.textContent = 'Could not load folders: ' + e.message;
+  }
+};
+
+function populateFolderDropdown(selectedId) {
+  const sel = document.getElementById('ep-drive-folder');
+  const current = selectedId || sel.value;
+  sel.innerHTML = '<option value="">— No Drive folder —</option>' +
+    driveFolderCache.map(f => `<option value="${f.id}">${esc(f.name)}</option>`).join('');
+  if (current) sel.value = current;
+}
+
+// Upload a base64 image to the project's Drive folder. Returns file id or null.
+async function uploadToDrive(base64, filename, folderId) {
+  if (!driveAccessToken || !folderId) return null;
+  try {
+    const byteStr = atob(base64);
+    const bytes = new Uint8Array(byteStr.length);
+    for (let i=0;i<byteStr.length;i++) bytes[i] = byteStr.charCodeAt(i);
+    const blob = new Blob([bytes], { type: 'image/jpeg' });
+
+    const metadata = { name: filename, parents: [folderId] };
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+    form.append('file', blob);
+
+    const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&supportsAllDrives=true', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + driveAccessToken },
+      body: form
+    });
+    if (!res.ok) throw new Error('upload ' + res.status);
+    const data = await res.json();
+    return data.id || null;
+  } catch(e) {
+    console.error('Drive upload failed', e);
+    return null;
+  }
+}
+
 window.showEditProjectForm = () => {
   const p = allProjects.find(x => x.id === window.currentProjectId);
   if (!p) return;
@@ -669,6 +792,20 @@ window.showEditProjectForm = () => {
   document.getElementById('ep-client').value  = p.client || '';
   document.getElementById('ep-address').value = p.address || '';
   document.getElementById('ep-status').value  = p.status || 'Active';
+  // Drive folder dropdown
+  if (driveFolderCache.length) populateFolderDropdown(p.driveFolderId || '');
+  else {
+    const sel = document.getElementById('ep-drive-folder');
+    sel.innerHTML = '<option value="">— No Drive folder —</option>';
+    if (p.driveFolderId) {
+      const o = document.createElement('option');
+      o.value = p.driveFolderId; o.textContent = p.driveFolderName || 'Saved folder';
+      o.selected = true; sel.appendChild(o);
+    }
+  }
+  document.getElementById('ep-drive-hint').textContent = driveAccessToken
+    ? 'Click "Load Folders" to refresh the list.'
+    : 'Connect Google Drive (top right), then click "Load Folders".';
   document.getElementById('edit-project-form').style.display = 'block';
   document.getElementById('edit-project-form').scrollIntoView({ behavior:'smooth', block:'center' });
 };
@@ -682,11 +819,16 @@ window.saveProjectEdits = async () => {
   if (!name) { document.getElementById('ep-name').focus(); return; }
   setSyncing();
   try {
+    const folderSel = document.getElementById('ep-drive-folder');
+    const folderId = folderSel.value;
+    const folderName = folderId ? (folderSel.options[folderSel.selectedIndex]?.text || '') : '';
     await updateDoc(doc(db,'projects',window.currentProjectId), {
       name,
       client:  document.getElementById('ep-client').value.trim(),
       address: document.getElementById('ep-address').value.trim(),
-      status:  document.getElementById('ep-status').value
+      status:  document.getElementById('ep-status').value,
+      driveFolderId:   folderId,
+      driveFolderName: folderName
     });
     window.hideEditProjectForm();
     window.showProjectDetail(window.currentProjectId);
@@ -918,6 +1060,15 @@ window.saveLog = async () => {
       await setDoc(doc(db,'logImages',logRef.id), {
         imageData: `data:image/jpeg;base64,${selectedImageBase64}`
       });
+      // Also upload a copy to the project's Google Drive folder, if configured
+      const proj = allProjects.find(p => p.id === window.currentProjectId);
+      if (proj && proj.driveFolderId && driveAccessToken) {
+        const datePart = (logData.date || new Date().toISOString().split('T')[0]);
+        const namePart = (logData.foreman || 'log').replace(/[^a-z0-9]+/gi,'_');
+        const fname = `LaborLog_${datePart}_${namePart}.jpg`;
+        const fileId = await uploadToDrive(selectedImageBase64, fname, proj.driveFolderId);
+        if (fileId) { try { await updateDoc(doc(db,'logs',logRef.id), { driveFileId: fileId }); } catch(e){} }
+      }
     }
     window.showProjectDetail(window.currentProjectId);
   } catch(e) { showToast('Error saving log: ' + e.message); }
@@ -1135,6 +1286,12 @@ function showToast(msg) {
   requestAnimationFrame(()=>t.style.opacity='1');
   setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300);},2800);
 }
+
+// Try to init the Drive client once the GIS script is ready
+(function waitForGIS(attempts){
+  if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) { initDriveClient(); }
+  else if (attempts < 40) { setTimeout(() => waitForGIS(attempts+1), 250); }
+})(0);
 
 boot();
 </script>
