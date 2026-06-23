@@ -281,6 +281,10 @@
         <div class="sub" id="pd-sub"></div>
       </div>
       <div class="view-header-actions">
+        <button class="btn btn-secondary" onclick="showEditProjectForm()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Edit
+        </button>
         <button class="btn btn-danger" onclick="deleteProject()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
           Delete
@@ -296,6 +300,27 @@
       </div>
     </div>
     <div id="pd-project-meta" class="project-meta"></div>
+    <div id="edit-project-form" class="form-card" style="display:none;">
+      <h3>Edit Project</h3>
+      <div class="form-row">
+        <div class="field"><label>Project Name <span style="color:var(--red)">*</span></label><input type="text" id="ep-name"></div>
+        <div class="field"><label>Client Name</label><input type="text" id="ep-client"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>Site Address</label><input type="text" id="ep-address"></div>
+        <div class="field"><label>Status</label>
+          <select id="ep-status">
+            <option value="Active">Active</option>
+            <option value="On Hold">On Hold</option>
+            <option value="Completed">Completed</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-secondary" onclick="hideEditProjectForm()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveProjectEdits()">Save Changes</button>
+      </div>
+    </div>
     <div class="chips" id="pd-chips"></div>
     <div class="section-label">Labor Logs</div>
     <div id="pd-logs-wrap" class="table-wrap">
@@ -637,11 +662,43 @@ window.deleteProject = async () => {
   } catch(e) { showToast('Error: ' + e.message); }
 };
 
+window.showEditProjectForm = () => {
+  const p = allProjects.find(x => x.id === window.currentProjectId);
+  if (!p) return;
+  document.getElementById('ep-name').value    = p.name || '';
+  document.getElementById('ep-client').value  = p.client || '';
+  document.getElementById('ep-address').value = p.address || '';
+  document.getElementById('ep-status').value  = p.status || 'Active';
+  document.getElementById('edit-project-form').style.display = 'block';
+  document.getElementById('edit-project-form').scrollIntoView({ behavior:'smooth', block:'center' });
+};
+
+window.hideEditProjectForm = () => {
+  document.getElementById('edit-project-form').style.display = 'none';
+};
+
+window.saveProjectEdits = async () => {
+  const name = document.getElementById('ep-name').value.trim();
+  if (!name) { document.getElementById('ep-name').focus(); return; }
+  setSyncing();
+  try {
+    await updateDoc(doc(db,'projects',window.currentProjectId), {
+      name,
+      client:  document.getElementById('ep-client').value.trim(),
+      address: document.getElementById('ep-address').value.trim(),
+      status:  document.getElementById('ep-status').value
+    });
+    window.hideEditProjectForm();
+    window.showProjectDetail(window.currentProjectId);
+  } catch(e) { showToast('Error saving project: ' + e.message); }
+};
+
 // ── Project Detail ────────────────────────────────────────
 window.showProjectDetail = (projectId) => {
   window.currentProjectId = projectId;
   const p = allProjects.find(x => x.id === projectId);
   if (!p) { window.showView('projects'); return; }
+  const epf = document.getElementById('edit-project-form'); if (epf) epf.style.display = 'none';
   const logs = allLogs.filter(l => l.projectId === projectId);
   const hrs  = logs.reduce((s,l)=>s+(l.workers||[]).reduce((a,w)=>a+(parseFloat(w.hours)||0),0),0);
 
@@ -786,9 +843,39 @@ window.extractData = async () => {
   }
 };
 
+// Normalize many date formats to YYYY-MM-DD for <input type="date">.
+// Handles "6-14-26", "06/14/2026", "2026-06-14", "June 14 2026", etc.
+function normalizeDate(raw) {
+  if (!raw) return '';
+  const s = String(raw).trim();
+  // Already ISO YYYY-MM-DD
+  let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (m) {
+    const y = m[1], mo = String(m[2]).padStart(2,'0'), d = String(m[3]).padStart(2,'0');
+    return `${y}-${mo}-${d}`;
+  }
+  // M-D-Y or M/D/Y (with 2- or 4-digit year), separators - / or .
+  m = s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if (m) {
+    let mo = parseInt(m[1],10), d = parseInt(m[2],10), y = parseInt(m[3],10);
+    if (y < 100) y += 2000; // "26" -> 2026
+    if (mo >= 1 && mo <= 12 && d >= 1 && d <= 31) {
+      return `${y}-${String(mo).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    }
+  }
+  // Fallback: let JS try (handles "June 14, 2026" etc.), using LOCAL time to avoid off-by-one
+  const parsed = new Date(s);
+  if (!isNaN(parsed)) {
+    const y = parsed.getFullYear();
+    const mo = String(parsed.getMonth()+1).padStart(2,'0');
+    const d = String(parsed.getDate()).padStart(2,'0');
+    return `${y}-${mo}-${d}`;
+  }
+  return ''; // unparseable — leave blank so user can fill manually
+}
+
 function populateReviewForm(x) {
-  let dv = '';
-  if (x.date) { const d = new Date(x.date); dv = isNaN(d) ? x.date : d.toISOString().split('T')[0]; }
+  const dv = normalizeDate(x.date);
   document.getElementById('rev-date').value           = dv;
   document.getElementById('rev-foreman').value        = x.foreman || '';
   document.getElementById('rev-site').value           = x.site    || '';
@@ -864,7 +951,7 @@ window.showLogDetail = async logId => {
   } catch(e) { /* no image for this log */ }
 
   // Populate editable fields
-  document.getElementById('ld-date').value      = log.date || '';
+  document.getElementById('ld-date').value      = normalizeDate(log.date) || (log.date || '');
   document.getElementById('ld-foreman').value   = log.foreman || '';
   document.getElementById('ld-site').value      = log.site || '';
   document.getElementById('ld-signed').checked  = !!log.signed;
