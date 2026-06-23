@@ -556,11 +556,38 @@ const db  = getFirestore(app);
 
 // ── Google Drive config ──────────────────────────────────
 // Paste the OAuth Client ID you create in Google Cloud Console here:
-const GOOGLE_CLIENT_ID = "918611231274-rf26kc1fb873vmepoofu9th64fhsv4ej.apps.googleusercontent.com";
-const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.file";
+const GOOGLE_CLIENT_ID = "PASTE_YOUR_CLIENT_ID_HERE.apps.googleusercontent.com";
+const DRIVE_SCOPE = "https://www.googleapis.com/auth/drive.readonly https://www.googleapis.com/auth/drive.file";
 let driveTokenClient = null;
 let driveAccessToken = null;
+let driveTokenExpiry = 0;    // epoch ms when the token expires
 let driveFolderCache = [];   // [{id, name}]
+
+// Restore a saved Drive token (survives page reloads until it expires)
+(function restoreDriveToken(){
+  try {
+    const saved = JSON.parse(localStorage.getItem('fll_drive_token') || 'null');
+    if (saved && saved.token && saved.expiry && Date.now() < saved.expiry - 60000) {
+      driveAccessToken = saved.token;
+      driveTokenExpiry = saved.expiry;
+    } else {
+      localStorage.removeItem('fll_drive_token');
+    }
+  } catch(e) { localStorage.removeItem('fll_drive_token'); }
+})();
+
+function saveDriveToken(token, expiresInSec) {
+  driveAccessToken = token;
+  driveTokenExpiry = Date.now() + (expiresInSec || 3600) * 1000;
+  try {
+    localStorage.setItem('fll_drive_token', JSON.stringify({ token, expiry: driveTokenExpiry }));
+    localStorage.setItem('fll_drive_consented', '1');
+  } catch(e){}
+}
+
+function driveTokenValid() {
+  return !!driveAccessToken && Date.now() < driveTokenExpiry - 60000;
+}
 
 const projectsCol = collection(db, 'projects');
 const logsCol     = collection(db, 'logs');
@@ -695,11 +722,12 @@ function initDriveClient() {
     scope: DRIVE_SCOPE,
     callback: (resp) => {
       if (resp && resp.access_token) {
-        driveAccessToken = resp.access_token;
+        saveDriveToken(resp.access_token, Number(resp.expires_in) || 3600);
         updateDriveButton(true);
         showToast('Google Drive connected.');
         // If the edit form is open, auto-load folders
-        if (document.getElementById('edit-project-form').style.display !== 'none') {
+        if (document.getElementById('edit-project-form') &&
+            document.getElementById('edit-project-form').style.display !== 'none') {
           refreshDriveFolders();
         }
       }
@@ -714,8 +742,9 @@ window.handleDriveButton = () => {
   }
   initDriveClient();
   if (!driveTokenClient) { showToast('Drive library still loading, try again.'); return; }
-  // Always request a token (also used to re-auth when expired)
-  driveTokenClient.requestAccessToken({ prompt: driveAccessToken ? '' : 'consent' });
+  // If we ever consented before, try silent refresh (no popup); otherwise show consent
+  const everConsented = !!localStorage.getItem('fll_drive_consented');
+  driveTokenClient.requestAccessToken({ prompt: everConsented ? '' : 'consent' });
 };
 
 function updateDriveButton(connected) {
@@ -727,23 +756,39 @@ function updateDriveButton(connected) {
 
 window.refreshDriveFolders = async () => {
   const hint = document.getElementById('ep-drive-hint');
-  if (!driveAccessToken) {
-    hint.textContent = 'Connect Google Drive (top right) first, then load folders.';
-    window.handleDriveButton();
+  if (!driveTokenValid()) {
+    hint.textContent = 'Connecting to Google Drive…';
+    window.handleDriveButton();  // will refresh token, then user can click Load again
     return;
   }
-  hint.textContent = 'Loading folders from Drive...';
+  hint.textContent = 'Loading folders from Drive…';
   try {
-    // List folders the user can write to (most recent 200)
+    // List all folders (My Drive + shared), paginating through results
+    driveFolderCache = [];
+    let pageToken = '';
     const q = encodeURIComponent("mimeType='application/vnd.google-apps.folder' and trashed=false");
-    const url = `https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)&pageSize=200&orderBy=name&supportsAllDrives=true&includeItemsFromAllDrives=true`;
-    const res = await fetch(url, { headers: { Authorization: 'Bearer ' + driveAccessToken } });
-    if (res.status === 401) { driveAccessToken = null; updateDriveButton(false); hint.textContent='Drive session expired — reconnect.'; return; }
-    if (!res.ok) throw new Error('Drive API error ' + res.status);
-    const data = await res.json();
-    driveFolderCache = data.files || [];
+    do {
+      const url = `https://www.googleapis.com/drive/v3/files?q=${q}`
+        + `&fields=nextPageToken,files(id,name)&pageSize=200&orderBy=name`
+        + `&supportsAllDrives=true&includeItemsFromAllDrives=true&corpora=allDrives`
+        + (pageToken ? `&pageToken=${pageToken}` : '');
+      const res = await fetch(url, { headers: { Authorization: 'Bearer ' + driveAccessToken } });
+      if (res.status === 401) {
+        localStorage.removeItem('fll_drive_token');
+        driveAccessToken = null; updateDriveButton(false);
+        hint.textContent = 'Drive session expired — click Load Folders again to reconnect.';
+        return;
+      }
+      if (!res.ok) throw new Error('Drive API error ' + res.status);
+      const data = await res.json();
+      driveFolderCache = driveFolderCache.concat(data.files || []);
+      pageToken = data.nextPageToken || '';
+    } while (pageToken && driveFolderCache.length < 1000);
+
     populateFolderDropdown();
-    hint.textContent = driveFolderCache.length + ' folders loaded. Pick one for this project.';
+    hint.textContent = driveFolderCache.length
+      ? driveFolderCache.length + ' folders loaded. Pick one for this project.'
+      : 'No folders found in your Drive. Create one in Google Drive first, then reload.';
   } catch(e) {
     hint.textContent = 'Could not load folders: ' + e.message;
   }
@@ -759,7 +804,7 @@ function populateFolderDropdown(selectedId) {
 
 // Upload a base64 image to the project's Drive folder. Returns file id or null.
 async function uploadToDrive(base64, filename, folderId) {
-  if (!driveAccessToken || !folderId) return null;
+  if (!driveTokenValid() || !folderId) return null;
   try {
     const byteStr = atob(base64);
     const bytes = new Uint8Array(byteStr.length);
@@ -803,7 +848,7 @@ window.showEditProjectForm = () => {
       o.selected = true; sel.appendChild(o);
     }
   }
-  document.getElementById('ep-drive-hint').textContent = driveAccessToken
+  document.getElementById('ep-drive-hint').textContent = driveTokenValid()
     ? 'Click "Load Folders" to refresh the list.'
     : 'Connect Google Drive (top right), then click "Load Folders".';
   document.getElementById('edit-project-form').style.display = 'block';
@@ -1062,7 +1107,7 @@ window.saveLog = async () => {
       });
       // Also upload a copy to the project's Google Drive folder, if configured
       const proj = allProjects.find(p => p.id === window.currentProjectId);
-      if (proj && proj.driveFolderId && driveAccessToken) {
+      if (proj && proj.driveFolderId && driveTokenValid()) {
         const datePart = (logData.date || new Date().toISOString().split('T')[0]);
         const namePart = (logData.foreman || 'log').replace(/[^a-z0-9]+/gi,'_');
         const fname = `LaborLog_${datePart}_${namePart}.jpg`;
@@ -1289,8 +1334,11 @@ function showToast(msg) {
 
 // Try to init the Drive client once the GIS script is ready
 (function waitForGIS(attempts){
-  if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) { initDriveClient(); }
-  else if (attempts < 40) { setTimeout(() => waitForGIS(attempts+1), 250); }
+  if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
+    initDriveClient();
+    // Reflect a restored (still-valid) token in the header button
+    if (driveTokenValid()) updateDriveButton(true);
+  } else if (attempts < 40) { setTimeout(() => waitForGIS(attempts+1), 250); }
 })(0);
 
 boot();
