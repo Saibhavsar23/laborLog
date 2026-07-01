@@ -342,7 +342,7 @@
     <div class="section-label">Labor Logs</div>
     <div id="pd-logs-wrap" class="table-wrap">
       <table>
-        <thead><tr><th>Date</th><th>Foreman</th><th>Site</th><th>Workers</th><th>Total Hrs</th><th>Legibility</th><th>Signed</th><th></th></tr></thead>
+        <thead><tr><th>Date</th><th>Job Type</th><th>Foreman</th><th>Site</th><th>Workers</th><th>Total Hrs</th><th>Legibility</th><th>Signed</th><th></th></tr></thead>
         <tbody id="pd-logs-body"></tbody>
       </table>
     </div>
@@ -410,17 +410,27 @@
         </div>
         <div class="form-row">
           <div class="field"><label>Site / Location</label><input type="text" id="rev-site" placeholder="Site name or address"></div>
+          <div class="field"><label>Job Type</label>
+            <select id="rev-jobtype">
+              <option value="Packout">Packout</option>
+              <option value="Packback">Packback</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
           <div class="field"><label>Legibility</label>
             <select id="rev-legibility">
+              <option value="Clear">Clear</option>
               <option value="Good">Good</option>
               <option value="Partial">Partial</option>
               <option value="Poor">Poor</option>
             </select>
           </div>
-        </div>
-        <div class="field checkbox-row">
-          <input type="checkbox" id="rev-signed">
-          <label for="rev-signed">Log is signed by foreman</label>
+          <div class="field checkbox-row" style="align-self:end;">
+            <input type="checkbox" id="rev-signed">
+            <label for="rev-signed">Log is signed by foreman</label>
+          </div>
         </div>
       </div>
       <div class="form-card">
@@ -496,13 +506,24 @@
       </div>
       <div class="form-row">
         <div class="field"><label>Site / Location</label><input type="text" id="ld-site" placeholder="Site name or address"></div>
+        <div class="field"><label>Job Type</label>
+          <select id="ld-jobtype">
+            <option value="Packout">Packout</option>
+            <option value="Packback">Packback</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
         <div class="field"><label>Legibility</label>
           <select id="ld-legibility">
+            <option value="clear">Clear</option>
             <option value="good">Good</option>
             <option value="partial">Partial</option>
             <option value="poor">Poor</option>
           </select>
         </div>
+        <div class="field"></div>
       </div>
       <div class="form-row">
         <div class="field"><label>Vehicles Used</label><input type="text" id="ld-vehicles" placeholder="e.g. F-250, box truck"></div>
@@ -910,6 +931,7 @@ window.showProjectDetail = (projectId) => {
       const lHrs = (l.workers||[]).reduce((s,w)=>s+(parseFloat(w.hours)||0),0);
       return `<tr>
         <td>${l.date||'&#8212;'}</td>
+        <td>${jobTypeBadge(l.jobType)}</td>
         <td>${esc(l.foreman||'&#8212;')}</td>
         <td>${esc(l.site||'&#8212;')}</td>
         <td style="font-family:var(--font-mono)">${(l.workers||[]).length}</td>
@@ -1006,7 +1028,7 @@ window.extractData = async () => {
       headers: { 'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true' },
       body: JSON.stringify({
         model: 'claude-sonnet-4-6', max_tokens: 1000,
-        system: `You are an expert at reading handwritten and printed paper labor logs from construction sites. Extract all data from the image and return ONLY valid JSON — no markdown, no explanation. Schema: { "date": "string or null", "foreman": "string or null", "site": "string or null", "signed": true or false, "overall_legibility": "good" or "partial" or "poor", "ai_notes": "string", "vehicles": "string or null", "num_dollies": number or null, "dumpster_size": "string or null", "workers": [ { "name": "string", "start_time": "string or null", "end_time": "string or null", "hours": number or null, "needs_review": true or false } ] }. Set needs_review: true for any row that was unclear or required a guess.`,
+        system: `You are an expert at reading handwritten and printed paper labor logs from construction sites. Extract all data from the image and return ONLY valid JSON — no markdown, no explanation. Schema: { "date": "string or null", "foreman": "string or null", "site": "string or null", "signed": true or false, "overall_legibility": "good" or "partial" or "poor", "ai_notes": "string", "job_type": "Packout" or "Packback" or "Other", "vehicles": "string or null", "num_dollies": number or null, "dumpster_size": "string or null", "workers": [ { "name": "string", "start_time": "string or null", "end_time": "string or null", "hours": number or null, "needs_review": true or false } ] }. For job_type, classify the log as one of: Packout (removing/packing contents out of a property), Packback (returning/replacing contents back into a property), or Other if it is neither or unclear. Set needs_review: true for any row that was unclear or required a guess.`,
         messages: [{ role:'user', content:[
           { type:'image', source:{ type:'base64', media_type:mediaType, data:selectedImageBase64 } },
           { type:'text', text:'Extract all labor log data from this image.' }
@@ -1067,6 +1089,7 @@ function populateReviewForm(x) {
   document.getElementById('rev-foreman').value        = x.foreman || '';
   document.getElementById('rev-site').value           = x.site    || '';
   document.getElementById('rev-signed').checked       = !!x.signed;
+  document.getElementById('rev-jobtype').value        = ['Packout','Packback','Other'].includes(x.job_type) ? x.job_type : 'Other';
   document.getElementById('rev-vehicles').value       = x.vehicles || '';
   document.getElementById('rev-dollies').value        = x.num_dollies != null ? x.num_dollies : '';
   document.getElementById('rev-dumpster').value       = x.dumpster_size || '';
@@ -1091,6 +1114,7 @@ window.saveLog = async () => {
       foreman:     document.getElementById('rev-foreman').value.trim(),
       site:        document.getElementById('rev-site').value.trim(),
       signed:      document.getElementById('rev-signed').checked,
+      jobType:     document.getElementById('rev-jobtype').value,
       legibility:  document.getElementById('rev-legibility').value.toLowerCase(),
       aiNotes:     document.getElementById('rev-ai-notes-inline').value.trim(),
       vehicles:    document.getElementById('rev-vehicles').value.trim(),
@@ -1151,6 +1175,7 @@ window.showLogDetail = async logId => {
   document.getElementById('ld-foreman').value   = log.foreman || '';
   document.getElementById('ld-site').value      = log.site || '';
   document.getElementById('ld-signed').checked  = !!log.signed;
+  document.getElementById('ld-jobtype').value   = ['Packout','Packback','Other'].includes(log.jobType) ? log.jobType : 'Other';
   document.getElementById('ld-vehicles').value  = log.vehicles || '';
   document.getElementById('ld-dollies').value   = log.numDollies != null ? log.numDollies : '';
   document.getElementById('ld-dumpster').value  = log.dumpsterSize || '';
@@ -1191,6 +1216,7 @@ window.saveLogEdits = async () => {
       foreman:      document.getElementById('ld-foreman').value.trim(),
       site:         document.getElementById('ld-site').value.trim(),
       signed:       document.getElementById('ld-signed').checked,
+      jobType:      document.getElementById('ld-jobtype').value,
       legibility:   document.getElementById('ld-legibility').value,
       vehicles:     document.getElementById('ld-vehicles').value.trim(),
       numDollies:   document.getElementById('ld-dollies').value !== '' ? Number(document.getElementById('ld-dollies').value) : null,
@@ -1223,9 +1249,9 @@ window.deleteLog = async () => {
 window.exportCSV = () => {
   const logs = allLogs.filter(l => l.projectId === window.currentProjectId);
   if (!logs.length) { alert('No logs to export.'); return; }
-  const rows = [['Log Date','Foreman','Site','Vehicles','Dollies','Dumpster Size','Worker Name','Start Time','End Time','Hours','Needs Review']];
+  const rows = [['Log Date','Job Type','Foreman','Site','Vehicles','Dollies','Dumpster Size','Worker Name','Start Time','End Time','Hours','Needs Review']];
   logs.forEach(l => (l.workers||[]).forEach(w =>
-    rows.push([l.date||'',l.foreman||'',l.site||'',l.vehicles||'',l.numDollies!=null?l.numDollies:'',l.dumpsterSize||'',w.name||'',w.startTime||'',w.endTime||'',w.hours||'',w.needsReview?'Yes':'No'])
+    rows.push([l.date||'',l.jobType||'',l.foreman||'',l.site||'',l.vehicles||'',l.numDollies!=null?l.numDollies:'',l.dumpsterSize||'',w.name||'',w.startTime||'',w.endTime||'',w.hours||'',w.needsReview?'Yes':'No'])
   ));
   const csv  = rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
   const blob = new Blob([csv],{type:'text/csv'});
@@ -1248,7 +1274,7 @@ function appendWorkerRow(tbody, w) {
   if (w.needs_review) tr.classList.add('tr-review');
   tr.dataset.needsReview = w.needs_review ? '1' : '0';
   tr.innerHTML = `
-    <td><span class="dot ${w.needs_review?'dot-amber':'dot-green'}"></span></td>
+    <td><span class="dot ${w.needs_review?'dot-amber':'dot-green'}" onclick="toggleReview(this)" title="${w.needs_review?'Needs review — click to mark clear':'Clear'}" style="cursor:pointer;"></span></td>
     <td><input class="cell-input cell-input-name" type="text" value="${esc(w.name||'')}" placeholder="Name"></td>
     <td><input class="cell-input" type="text" value="${esc(w.start_time||'')}" placeholder="07:00" style="max-width:80px" onblur="recalcHours(this)"></td>
     <td><input class="cell-input" type="text" value="${esc(w.end_time||'')}" placeholder="15:30" style="max-width:80px" onblur="recalcHours(this)"></td>
@@ -1299,6 +1325,36 @@ function parseTime(s) {
   return (isNaN(h)||isNaN(m)) ? null : h*60+m;
 }
 
+window.toggleReview = (dot) => {
+  const tr = dot.closest('tr');
+  // Only allow marking an amber (needs-review) entry as clear — one-directional.
+  if (tr.dataset.needsReview !== '1') return;
+  tr.dataset.needsReview = '0';
+  tr.classList.remove('tr-review');
+  dot.classList.remove('dot-amber');
+  dot.classList.add('dot-green');
+  dot.title = 'Clear';
+  const tbody = tr.parentElement;
+  const summaryId = tbody.id === 'rev-workers-body' ? 'rev-summary' : 'ld-summary';
+  updateWorkerSummary(tbody.id, summaryId);
+  maybeMarkLogClear(tbody.id);
+};
+
+// If every worker row in this table is clear, bump the legibility select to "Clear".
+function maybeMarkLogClear(tbodyId) {
+  const rows = Array.from(document.getElementById(tbodyId).querySelectorAll('tr'));
+  if (!rows.length) return;
+  const anyNeedsReview = rows.some(tr => tr.dataset.needsReview === '1');
+  if (anyNeedsReview) return;
+  if (tbodyId === 'ld-workers-body') {
+    const sel = document.getElementById('ld-legibility');
+    if (sel && sel.value !== 'clear') { sel.value = 'clear'; showToast('All entries clear — legibility set to Clear. Save to keep.'); }
+  } else if (tbodyId === 'rev-workers-body') {
+    const sel = document.getElementById('rev-legibility');
+    if (sel && sel.value !== 'Clear') { sel.value = 'Clear'; }
+  }
+}
+
 function updateWorkerSummary(tbodyId, summaryId) {
   const rows = Array.from(document.getElementById(tbodyId).querySelectorAll('tr'));
   let hrs=0,rc=0;
@@ -1321,7 +1377,20 @@ function getWorkersFromBody(tbodyId) {
 // ── Helpers ───────────────────────────────────────────────
 function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function statusBadge(s) { const m={'Active':'badge-blue','On Hold':'badge-gray','Completed':'badge-green'}; return `<span class="badge ${m[s]||'badge-gray'}">${esc(s||'&#8212;')}</span>`; }
-function legibilityBadge(l) { const v=(l||'').toLowerCase(); if(v==='good') return '<span class="badge badge-green">Good</span>'; if(v==='partial') return '<span class="badge badge-amber">Partial</span>'; if(v==='poor') return '<span class="badge badge-red">Poor</span>'; return `<span class="badge badge-gray">${esc(l||'&#8212;')}</span>`; }
+function jobTypeBadge(t) {
+  if (t==='Packout')  return '<span class="badge badge-blue">Packout</span>';
+  if (t==='Packback') return '<span class="badge" style="background:#EDE9FE;color:#6D28D9;">Packback</span>';
+  if (t==='Other')    return '<span class="badge badge-gray">Other</span>';
+  return '<span class="badge badge-gray">&#8212;</span>';
+}
+function legibilityBadge(l) {
+  const v=(l||'').toLowerCase();
+  if(v==='clear') return '<span class="badge badge-green">Clear</span>';
+  if(v==='good') return '<span class="badge badge-green">Good</span>';
+  if(v==='partial') return '<span class="badge badge-amber">Partial</span>';
+  if(v==='poor') return '<span class="badge badge-red">Poor</span>';
+  return `<span class="badge badge-gray">${esc(l||'&#8212;')}</span>`;
+}
 function formatDate(iso) { if(!iso) return '&#8212;'; try { return new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); } catch { return iso; } }
 function showToast(msg) {
   const t = document.createElement('div');
